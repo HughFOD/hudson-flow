@@ -6,6 +6,7 @@ so re-running the analysis and then this script keeps the site truthful.
 from __future__ import annotations
 
 import html
+import json
 import shutil
 import sys
 from datetime import date
@@ -75,6 +76,14 @@ def stats(run: Path) -> dict:
         lo, hi = f["hybrid_lo"].to_numpy(), f["hybrid_hi"].to_numpy()
         row["coverage"] = float(np.mean((y >= lo) & (y <= hi)))
         s["forecasts"].append(row)
+    inv = run / "investigation.json"
+    s["inv"] = json.loads(inv.read_text()) if inv.exists() else None
+    if s["inv"] and s["inv"]["offset_periods"]:
+        p = s["inv"]["offset_periods"][0]
+        outside = daily.filter(~pl.col("d").is_between(date.fromisoformat(p["start"]),
+                                                       date.fromisoformat(p["end"]).replace(day=28)))
+        s["gap_outside_cfs"] = float((outside["o"] - outside["p"]).median())
+        s["gap_outside_pct"] = float(outside["m"].median())
     return s
 
 
@@ -128,7 +137,7 @@ def build(root: Path) -> Path:
     img = docs / "img"
     img.mkdir(parents=True, exist_ok=True)
     charts = {}
-    for name in ("flow_balance", "hydrograph", "storm_forecast", "skill_by_horizon", "feature_importance", "anomalies"):
+    for name in ("monthly_gap", "flow_balance", "hydrograph", "storm_forecast", "skill_by_horizon", "feature_importance", "anomalies"):
         src = run / f"{name}.png"
         if src.exists():
             shutil.copy(src, img / src.name)
@@ -138,12 +147,6 @@ def build(root: Path) -> Path:
     names = {"upper_hudson": "Upper Hudson (01335754)", "mohawk": "Mohawk at Cohoes (01357500)",
              "green_island": "Green Island (01358000)"}
 
-    mx = max(abs(m["m"]) for m in s["monthly"]) or 1
-    peak_m = max(s["monthly"], key=lambda m: m["m"])["month"]
-    bars = "".join(
-        f'<div class="{"hi" if m["month"] == peak_m else ""}" style="height:{max(2, 100 * max(0, m["m"]) / mx):.0f}%" '
-        f'title="{date(2000, m["month"], 1):%B}: {pct(m["m"], True)}"></div>' for m in s["monthly"])
-    labels = "".join(f"<span>{date(2000, m['month'], 1):%b}</span>" for m in s["monthly"])
 
     grows = "".join(
         f"<tr><td>{e(names.get(g['site'], g['site']))}</td><td>{g['n']:,}</td><td>{pct(100 * g['flagged'])}</td>"
@@ -164,6 +167,38 @@ def build(root: Path) -> Path:
 
     def fig(key, cap):
         return f'<figure><img src="{charts[key]}" alt="{e(cap)}" loading="lazy"><figcaption>{e(cap)}</figcaption></figure>' if key in charts else ""
+
+    inv = s.get("inv")
+    if inv:
+        periods = inv["offset_periods"]
+        per = periods[0] if periods else None
+        per_txt = (f"<p>The real pattern is a step. From {date.fromisoformat(per['start']):%B %Y} to {date.fromisoformat(per['end']):%B %Y} "
+                   f"the gap jumps to a median of {per['median_gap_cfs']:,.0f} cfs, then drops back. Outside that stretch the median gap is "
+                   f"{s.get('gap_outside_cfs', 0):,.0f} cfs ({pct(s.get('gap_outside_pct', 0), True)}). An offset that switches on and off like that, "
+                   f"regardless of season or flow, looks like a calibration problem at one gauge rather than anything physical in the river.</p>") if per else ""
+        if inv["calibration"]:
+            rows = "".join(
+                f"<tr><td>{e(names.get(r['site'], r['site']))}</td><td>{'Yes' if r['in_offset_period'] else 'No'}</td>"
+                f"<td>{r['measurements']}</td><td>{r['median_error_pct']:+.1f}%</td></tr>" for r in inv["calibration"])
+            cal_txt = ("<p>To find which gauge, I compared each gauge's reported flow with the USGS field crews' hand measurements, "
+                       "which the gauges are calibrated against:</p><div class=\"tablewrap\"><table><thead><tr><th>Gauge</th>"
+                       "<th>In offset period</th><th>Hand measurements</th><th>Gauge vs. hand measurement</th></tr></thead>"
+                       f"<tbody>{rows}</tbody></table></div>")
+        else:
+            cal_txt = ("<p><b>Next test:</b> USGS crews measure each river by hand several times a year, and the gauges are calibrated against those visits. "
+                       "Comparing each gauge's reported flow with the hand measurements during the offset period will show which gauge drifted "
+                       "(<code>step7_investigate.py</code> does this).</p>")
+        investigation = f"""<p>My first explanation was the Barge Canal: part of the Mohawk is diverted around the Cohoes gauge through the Waterford locks
+and rejoins the Hudson above Green Island. I tested it against the canal's actual opening and closing dates for 2022–2025, and <b>it does not hold up</b>.
+Measured in cubic feet per second, the gap is about the same with the canal open ({inv['gap_open_cfs']:,.0f} cfs) as closed ({inv['gap_closed_cfs']:,.0f} cfs),
+and it moved the expected way at only {inv['events_consistent']} of {inv['events_total']} openings and closings. It only looked seasonal in percent terms
+because the river is low in late summer ({inv['flow_open_cfs']:,.0f} cfs vs {inv['flow_closed_cfs']:,.0f} cfs), so the same gap is a bigger share.</p>
+{fig('monthly_gap', 'Median daily gap by month in cfs, with the canal navigation seasons shaded. Orange months are above 1,000 cfs.')}
+{per_txt}
+{cal_txt}"""
+    else:
+        investigation = f"""<p>The gap is larger in percent terms in late summer and autumn ({pct(s['peak_pct'], True)} in {e(s['peak_month'])}), when the river is low.
+Run <code>step7_investigate.py</code> to test the canal explanation and check each gauge against USGS hand measurements.</p>"""
 
     best_txt = (f"{MODELS[best12[0]]} cut 12-hour forecast error by {best12[1]:.0%}"
                 if best12 else "Forecast results")
@@ -199,12 +234,8 @@ Salt:   C_GreenIsland    = (Q_Hudson*C_Hudson + Q_Mohawk*C_Mohawk) / (Q_Hudson +
 <p>Each 15-minute reading is checked for USGS quality codes, stuck values, one-point spikes and gaps. Readings that pass are averaged hourly and run through the balance. Travel times between gauges are fitted jointly, since fitting each tributary on its own gives the wrong answer when one storm hits both basins.</p>
 
 <h2>Do the gauges add up?</h2>
-<p>On a typical day, yes: the median gap is {pct(s['daily_median'], True)}. Hour to hour it is noisier ({pct(s['hourly_abs'])} median absolute), which points to dam and lock operations releasing water in pulses rather than to faulty sensors.</p>
-<p>The gap has a clear season. It is near {pct(s['winter_pct'], True)} in winter and climbs to {pct(s['peak_pct'], True)} in {e(s['peak_month'])}:</p>
-<div class="months" aria-label="Median daily mismatch by month">{bars}</div>
-<div class="mlabels">{labels}</div>
-<p class="muted" style="margin-top:.75rem">Median daily mismatch by calendar month. Positive means Green Island carried more water than the two upstream gauges.</p>
-<p><b>Working explanation:</b> part of the Mohawk is diverted into the Barge Canal upstream of the Cohoes gauge, and the canal's locks at Waterford return it to the Hudson between the upstream gauges and Green Island. That water reaches Green Island without passing either upstream gauge. A roughly constant diversion is a bigger share of the river at low autumn flows, which matches the pattern. The next test is to line the gap up against the canal's opening and closing dates.</p>
+<p>Mostly, yes: the median daily gap is {pct(s['daily_median'], True)}. Hour to hour it is noisier ({pct(s['hourly_abs'])} median absolute), which points to dam and lock operations releasing water in pulses rather than to faulty sensors.</p>
+{investigation}
 {fig('flow_balance', 'Hourly flow balance: measured flow at Green Island against the lagged sum of the upstream gauges, and the residual.')}
 
 <h2>How trustworthy is each gauge?</h2>
@@ -223,7 +254,8 @@ Salt:   C_GreenIsland    = (Q_Hudson*C_Hudson + Q_Mohawk*C_Mohawk) / (Q_Hudson +
 <ul>
 <li>Physics found problems rules could not. A sensor drifting out of calibration still reports plausible numbers; only the balance against its neighbours exposes it.</li>
 <li>Real data broke assumptions that synthetic data never tested: a date-range bug that dropped every December 31st, USGS changing its quality codes between APIs, and a sensor that only existed for six weeks.</li>
-<li>The simple mass-balance forecast lost to "no change" on the real river, because of water the gauges cannot see. Reporting that honestly is more useful than hiding it.</li>
+<li>My first explanation for the imbalance, the Barge Canal, was wrong. Testing it against the real canal dates and measuring the gap in cfs instead of percent turned up a year-long calibration offset instead.</li>
+<li>The simple mass-balance forecast lost to "no change" on the real river. Reporting that honestly is more useful than hiding it.</li>
 </ul>
 
 <footer>{repo}Data: U.S. Geological Survey Water Data API; rainfall from Open-Meteo. Generated {date.today():%B %-d, %Y} from run <code>{e(s['run'])}</code>.</footer>

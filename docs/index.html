@@ -63,12 +63,15 @@ Salt:   C_GreenIsland    = (Q_Hudson*C_Hudson + Q_Mohawk*C_Mohawk) / (Q_Hudson +
 <p>Each 15-minute reading is checked for USGS quality codes, stuck values, one-point spikes and gaps. Readings that pass are averaged hourly and run through the balance. Travel times between gauges are fitted jointly, since fitting each tributary on its own gives the wrong answer when one storm hits both basins.</p>
 
 <h2>Do the gauges add up?</h2>
-<p>On a typical day, yes: the median gap is +5.1%. Hour to hour it is noisier (13.5% median absolute), which points to dam and lock operations releasing water in pulses rather than to faulty sensors.</p>
-<p>The gap has a clear season. It is near +1.0% in winter and climbs to +19.3% in September:</p>
-<div class="months" aria-label="Median daily mismatch by month"><div class="" style="height:2%" title="January: +0.3%"></div><div class="" style="height:2%" title="February: -5.8%"></div><div class="" style="height:9%" title="March: +1.7%"></div><div class="" style="height:7%" title="April: +1.4%"></div><div class="" style="height:4%" title="May: +0.8%"></div><div class="" style="height:41%" title="June: +7.9%"></div><div class="" style="height:2%" title="July: -1.4%"></div><div class="" style="height:41%" title="August: +7.8%"></div><div class="hi" style="height:100%" title="September: +19.3%"></div><div class="" style="height:74%" title="October: +14.3%"></div><div class="" style="height:77%" title="November: +14.9%"></div><div class="" style="height:24%" title="December: +4.7%"></div></div>
-<div class="mlabels"><span>Jan</span><span>Feb</span><span>Mar</span><span>Apr</span><span>May</span><span>Jun</span><span>Jul</span><span>Aug</span><span>Sep</span><span>Oct</span><span>Nov</span><span>Dec</span></div>
-<p class="muted" style="margin-top:.75rem">Median daily mismatch by calendar month. Positive means Green Island carried more water than the two upstream gauges.</p>
-<p><b>Working explanation:</b> part of the Mohawk is diverted into the Barge Canal upstream of the Cohoes gauge, and the canal's locks at Waterford return it to the Hudson between the upstream gauges and Green Island. That water reaches Green Island without passing either upstream gauge. A roughly constant diversion is a bigger share of the river at low autumn flows, which matches the pattern. The next test is to line the gap up against the canal's opening and closing dates.</p>
+<p>Mostly, yes: the median daily gap is +5.1%. Hour to hour it is noisier (13.5% median absolute), which points to dam and lock operations releasing water in pulses rather than to faulty sensors.</p>
+<p>My first explanation was the Barge Canal: part of the Mohawk is diverted around the Cohoes gauge through the Waterford locks
+and rejoins the Hudson above Green Island. I tested it against the canal's actual opening and closing dates for 2022–2025, and <b>it does not hold up</b>.
+Measured in cubic feet per second, the gap is about the same with the canal open (591 cfs) as closed (639 cfs),
+and it moved the expected way at only 3 of 5 openings and closings. It only looked seasonal in percent terms
+because the river is low in late summer (6,640 cfs vs 18,440 cfs), so the same gap is a bigger share.</p>
+<figure><img src="img/monthly_gap.png" alt="Median daily gap by month in cfs, with the canal navigation seasons shaded. Orange months are above 1,000 cfs." loading="lazy"><figcaption>Median daily gap by month in cfs, with the canal navigation seasons shaded. Orange months are above 1,000 cfs.</figcaption></figure>
+<p>The real pattern is a step. From December 2022 to November 2023 the gap jumps to a median of 2,597 cfs, then drops back. Outside that stretch the median gap is 99 cfs (+0.7%). An offset that switches on and off like that, regardless of season or flow, looks like a calibration problem at one gauge rather than anything physical in the river.</p>
+<p><b>Next test:</b> USGS crews measure each river by hand several times a year, and the gauges are calibrated against those visits. Comparing each gauge's reported flow with the hand measurements during the offset period will show which gauge drifted (<code>step7_investigate.py</code> does this).</p>
 <figure><img src="img/flow_balance.png" alt="Hourly flow balance: measured flow at Green Island against the lagged sum of the upstream gauges, and the residual." loading="lazy"><figcaption>Hourly flow balance: measured flow at Green Island against the lagged sum of the upstream gauges, and the residual.</figcaption></figure>
 
 <h2>How trustworthy is each gauge?</h2>
@@ -87,7 +90,8 @@ Salt:   C_GreenIsland    = (Q_Hudson*C_Hudson + Q_Mohawk*C_Mohawk) / (Q_Hudson +
 <ul>
 <li>Physics found problems rules could not. A sensor drifting out of calibration still reports plausible numbers; only the balance against its neighbours exposes it.</li>
 <li>Real data broke assumptions that synthetic data never tested: a date-range bug that dropped every December 31st, USGS changing its quality codes between APIs, and a sensor that only existed for six weeks.</li>
-<li>The simple mass-balance forecast lost to "no change" on the real river, because of water the gauges cannot see. Reporting that honestly is more useful than hiding it.</li>
+<li>My first explanation for the imbalance, the Barge Canal, was wrong. Testing it against the real canal dates and measuring the gap in cfs instead of percent turned up a year-long calibration offset instead.</li>
+<li>The simple mass-balance forecast lost to "no change" on the real river. Reporting that honestly is more useful than hiding it.</li>
 </ul>
 
 <footer><a href="https://github.com/HughFOD/hudson-flow">Code on GitHub</a> · Data: U.S. Geological Survey Water Data API; rainfall from Open-Meteo. Generated October 27, 2026 from run <code>2022-01-01_2025-12-31</code>.</footer>
