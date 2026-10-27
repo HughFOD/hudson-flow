@@ -83,12 +83,26 @@ including a slow calibration drift that has no qualifier and no stuck values:
 ## Known physical complications on the real river
 
 - **Barge Canal diversion:** the Mohawk gauge sits downstream of where water is diverted
-  into the canal at Crescent Dam. The canal runs only part of the year, so check the
-  monthly residual table for a seasonal pattern.
+  into the canal at Crescent Dam. Tested against the real season dates, it turned out too
+  small to explain the gap (see Findings).
 - **Tides:** below the Troy dam the Hudson is tidal, which is why the balance point is above it.
 - **Ice:** upstate winters produce ice-affected readings, which are flagged and excluded.
 
-## Setup
+## Running it in PyCharm (no terminal needed)
+
+Open each file and click the green ▶ next to `if __name__ == "__main__":`
+
+| File | What it does |
+|---|---|
+| `step1_setup.py` | creates `.venv` and installs everything (once) |
+| `step2_run_demo.py` | full pipeline on synthetic data with planted faults |
+| `step3_run_real_data.py` | downloads 2022–2025 USGS data and runs everything |
+| `step4_run_tests.py` | automated checks |
+| `step5_export_spreadsheets.py` | results as CSV for Excel |
+| `step6_build_website.py` | rebuilds the website in `docs/` |
+| `step7_investigate.py` | canal test, offset periods, gauge vs. hand measurements |
+
+## Setup from a terminal
 
 ```bash
 python -m venv .venv && source .venv/bin/activate
@@ -111,15 +125,45 @@ services are being retired in early 2027, so this project doesn't use them. Rain
 from the free Open-Meteo historical archive. Downloads are cached in `data/raw/`, and
 reports go to `output/`.
 
-## Findings on the real river
+## Findings on the real river (2022–2025)
 
-*(Write this once you've run it. Specific numbers make it convincing.)*
+**Data quality.** 927,484 fifteen-minute readings checked; 43,322 (4.7%) flagged.
+- Upper Hudson discharge: 4.8% flagged, mostly a 4,190-reading stuck stretch and 2,320 estimated values.
+- Green Island discharge: for most of 2024 USGS published only 2-hourly *estimated* values, so most of 2024 drops out of the balance and the models.
+- Mohawk conductance and temperature sensors were stuck or spiking 29% and 22% of the time.
+- Bugs real data exposed that synthetic data never did: the download dropped every December 31st, the new USGS API spells quality codes differently from the old one (so ice and estimated flags were initially missed), and Green Island measured conductance for only six weeks, which crashed the anomaly model.
 
-- What fraction of readings got flagged, and for what?
-- Does the balance close? Is the residual seasonal, and does that match the canal season?
-- Do the flow and salt balances agree on which periods look wrong?
-- Which model wins at each horizon, and does rainfall help on the real river?
-- What did the anomaly model find that the rules missed, and was it real?
+**Does the balance close?** On a typical day, yes: median daily gap +5.1%. Hour to hour it is
+noisier (13.5% median absolute), consistent with dam and lock operations releasing water in pulses.
+
+**The canal hypothesis was wrong.** My first explanation for the gap was the Barge Canal, which
+diverts Mohawk water around the Cohoes gauge and returns it to the Hudson above Green Island.
+Tested against the actual navigation seasons (2022–2025), the gap in cfs is the same with the
+canal open (591 cfs) as closed (639 cfs), and moved the expected way at only 3 of 5 openings and
+closings. It only looked seasonal in percent because summer flows are low (6,640 vs 18,440 cfs).
+
+**What it actually is: a year-long step.** From December 2022 to November 2023 the gap jumps to a
+median of 2,597 cfs, then drops back; outside that stretch it is 99 cfs (+0.7%). An offset that
+switches on and off regardless of season or flow points to a calibration problem at one gauge.
+`step7_investigate.py` compares each gauge with the USGS field crews' hand measurements to find
+which one. (A smaller rise in autumn 2025 is mostly provisional data and may be revised.)
+
+**Forecasting** (walk-forward, skill = error removed vs. "no change"):
+
+| Horizon | Mass balance | Ridge | Boosted trees | Balance + trees |
+|---|---|---|---|---|
+| 6 h  | −32% | −3% | **+13%** | +7% |
+| 12 h | −15% | +4% | **+20%** | +17% |
+| 24 h | −17% | **+17%** | +14% | +11% |
+
+- The pure mass-balance forecast loses to "no change": the calibration offset and lock operations
+  make it biased. Trees learn around that; ridge extrapolates better at 24 h.
+- Upstream gauges are what make it work: without them, skill drops to about zero.
+- Rainfall adds nothing at 6–12 h but helps at 24 h (+14% vs +4% without it), matching the travel time from the basins.
+- 90% prediction intervals covered only ~72% of outcomes before calibration and ~90% after conformal calibration.
+
+**Anomaly detection.** The rules flag 12,960 hours, most of them sustained-imbalance hours from the
+balance check; the Isolation Forest adds 82 hours of its own, short episodes worth inspecting by hand.
 
 ## Project layout
 
@@ -133,6 +177,8 @@ hudson/chemistry.py    conductance mixing balance and DO saturation
 hudson/features.py     leakage-safe forecasting features
 hudson/forecast.py     models, walk-forward evaluation, conformal intervals
 hudson/anomaly.py      Isolation Forest vs. rule-based flags
+hudson/investigate.py  canal test, offset periods, calibration check against hand measurements
+hudson/website.py      builds the project website from the latest results
 hudson/report.py       validation charts and report
 hudson/ml_report.py    forecasting and anomaly charts and report
 hudson/synthetic.py    simulated river with known faults, for tests and the demo
