@@ -122,3 +122,35 @@ def inventory() -> pl.DataFrame:
                         "begin", "end") if c in df.columns]
     df = df[keep].astype(str)
     return pl.from_pandas(df).sort(keep[:2])
+
+
+def fetch_measurements(start: date, end: date, cache_dir: Path) -> pl.DataFrame:
+    """USGS hand measurements of discharge at each gauge (a few per year).
+
+    These are what each gauge's rating curve is calibrated against, so they
+    are the independent check on whether a gauge's continuous record drifted.
+    """
+    from dataretrieval import waterdata
+
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    path = cache_dir / f"field_measurements_{start}_{end}.parquet"
+    if path.exists():
+        return pl.read_parquet(path)
+    ids = [s["id"] for s in config.SITES.values()]
+    df, _ = waterdata.get_field_measurements(
+        monitoring_location_id=ids, parameter_code="00060",
+        time=f"{start.isoformat()}T00:00:00Z/{(end + timedelta(days=1)).isoformat()}T00:00:00Z",
+    )
+    if df is None or len(df) == 0:
+        return pl.DataFrame()
+    keep = [c for c in ("monitoring_location_id", "time", "value", "approval_status") if c in df.columns]
+    df = df[keep].copy()
+    for c in ("monitoring_location_id", "approval_status"):
+        if c in df.columns:
+            df[c] = df[c].astype(str)
+    out = pl.from_pandas(df).with_columns(
+        pl.col("time").cast(pl.Datetime("us", "UTC"), strict=False),
+        pl.col("value").cast(pl.Float64, strict=False))
+    out.write_parquet(path)
+    print(f"  + {out.height} field measurements")
+    return out

@@ -5,6 +5,7 @@
     python run.py inventory                # what does each gauge measure?
     python run.py fetch   --start 2022-01-01 --end 2025-12-31
     python run.py analyze --start 2022-01-01 --end 2025-12-31
+    python run.py investigate --start 2022-01-01 --end 2025-12-31   # why the balance doesn't close
 
 Use at least 3 years of real data for the forecasting: the models need to
 see every season more than once.
@@ -17,8 +18,8 @@ from pathlib import Path
 
 import polars as pl
 
-from hudson import (anomaly, balance, chemistry, clean, fetch, forecast, ml_report, report,
-                    synthetic, weather)
+from hudson import (anomaly, balance, chemistry, clean, fetch, forecast, investigate, ml_report,
+                    report, synthetic, weather)
 
 CACHE = Path("data/raw")
 
@@ -59,7 +60,7 @@ def analyze(raw: pl.DataFrame, out: Path, rain: pl.DataFrame | None, ml: bool) -
 
 def main():
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument("command", choices=["demo", "inventory", "fetch", "analyze"])
+    p.add_argument("command", choices=["demo", "inventory", "fetch", "analyze", "investigate"])
     p.add_argument("--start", type=date.fromisoformat, default=date(2022, 1, 1))
     p.add_argument("--end", type=date.fromisoformat, default=date(2025, 12, 31))
     p.add_argument("--out", type=Path, default=Path("output"))
@@ -85,6 +86,25 @@ def main():
             except Exception as exc:
                 print(f"! Rainfall unavailable ({type(exc).__name__}: {exc}); forecasting without it")
         analyze(raw, a.out / f"{a.start}_{a.end}", rain, ml=not a.no_ml)
+    elif a.command == "investigate":
+        run_dir = a.out / f"{a.start}_{a.end}"
+        bal_path, rd_path = run_dir / "flow_balance.parquet", run_dir / "readings_flagged.parquet"
+        if not bal_path.exists():
+            raise SystemExit("Run the analysis first (step3_run_real_data.py).")
+        try:
+            meas = fetch.fetch_measurements(a.start, a.end, CACHE)
+        except Exception as exc:
+            print(f"! Field measurements unavailable ({type(exc).__name__}: {exc})")
+            meas = None
+        res = investigate.run(pl.read_parquet(bal_path), pl.read_parquet(rd_path), meas, run_dir)
+        print(f"Canal explains the gap: {res['canal_supported']}  "
+              f"(gap {res['gap_open_cfs']:.0f} cfs canal open vs {res['gap_closed_cfs']:.0f} cfs closed)")
+        for p in res["offset_periods"]:
+            print(f"Offset period: {p['start']} to {p['end']}, median gap {p['median_gap_cfs']:.0f} cfs")
+        for r in res["calibration"]:
+            print(f"  {r['site']:<13} in offset period={r['in_offset_period']!s:<5} "
+                  f"{r['measurements']:>3} hand measurements, gauge error {r['median_error_pct']:+.1f}%")
+        print(f"Saved to {run_dir}/investigation.json and monthly_gap.png")
 
 
 if __name__ == "__main__":
