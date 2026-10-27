@@ -1,0 +1,94 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Hudson River Gauge Check</title>
+<meta name="description" content="Validating and forecasting USGS Hudson and Mohawk river gauges with mass balances and machine learning.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400&family=IBM+Plex+Mono:wght@400;500&family=Public+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f6f8f7;--panel:#ffffff;--fg:#14211d;--muted:#566660;--line:#d9e2de;--accent:#1f6f5c;--accent2:#b5651d;--ok:#1f7a4d;--warn:#a6611a;
+--serif:"Fraunces",Georgia,serif;--sans:"Public Sans",system-ui,sans-serif;--mono:"IBM Plex Mono",ui-monospace,monospace}
+@media (prefers-color-scheme:dark){:root{--bg:#0f1715;--panel:#16211e;--fg:#e4ece9;--muted:#9aaba4;--line:#2a3833;--accent:#5cc2a6;--accent2:#e3a35f;--ok:#6fd39f;--warn:#e7a75a;color-scheme:dark}}
+*{box-sizing:border-box}html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.6 var(--sans)}
+.wrap{max-width:60rem;margin:0 auto;padding:3rem max(1rem,env(safe-area-inset-right)) 4rem max(1rem,env(safe-area-inset-left))}
+.eyebrow{font:500 .75rem/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+h1{font:400 clamp(2rem,5vw,3.2rem)/1.1 var(--serif);margin:.6rem 0 1rem;text-wrap:balance}
+h2{font:400 1.7rem/1.2 var(--serif);margin:3rem 0 .75rem;text-wrap:balance}
+h3{font-size:1rem;margin:0 0 .25rem}
+p{max-width:65ch;margin:0 0 1rem}
+.lede{font-size:1.15rem;color:var(--fg)}
+.muted{color:var(--muted)}
+a{color:var(--accent)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(12rem,1fr));gap:1rem;margin:2rem 0}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:1rem 1.1rem}
+.kpi b{display:block;font:400 2rem/1.1 var(--serif);font-variant-numeric:tabular-nums;margin-bottom:.35rem}
+.kpi span{font-size:.85rem;color:var(--muted);line-height:1.4;display:block}
+figure{margin:1.5rem 0;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:1rem}
+figure img{display:block;width:100%;height:auto;border-radius:4px;background:#fff}
+figcaption{font-size:.85rem;color:var(--muted);margin-top:.6rem}
+.diagram{font:400 .85rem/1.5 var(--mono);background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:1rem;overflow-x:auto;white-space:pre}
+.tablewrap{overflow-x:auto;background:var(--panel);border:1px solid var(--line);border-radius:10px}
+table{border-collapse:collapse;width:100%;font-size:.88rem;font-variant-numeric:tabular-nums}
+th,td{padding:.55rem .8rem;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+th:first-child,td:first-child{text-align:left}th{color:var(--muted);font-weight:500}
+tr:last-child td{border-bottom:0}td.best{color:var(--ok);font-weight:600}td.neg{color:var(--warn)}
+.months{display:grid;grid-template-columns:repeat(12,1fr);gap:4px;align-items:end;height:140px;margin:1rem 0 .3rem}
+.months div{background:var(--line);border-radius:4px 4px 0 0;min-height:2px;position:relative}
+.months div.hi{background:var(--accent2)}
+.mlabels{display:grid;grid-template-columns:repeat(12,1fr);gap:4px;font:400 .7rem var(--mono);color:var(--muted);text-align:center}
+ul{padding-left:1.2rem;max-width:65ch}li{margin:.3rem 0}
+code{font-family:var(--mono);font-size:.88em}
+footer{margin-top:4rem;font-size:.85rem;color:var(--muted);border-top:1px solid var(--line);padding-top:1rem}
+</style></head><body><main class="wrap">
+<div class="eyebrow">Data validation · Chemical engineering · Machine learning</div>
+<h1>Hudson River Gauge Check</h1>
+<p class="lede">Where the Mohawk joins the Hudson near Troy, New York, the water flowing out must equal the water flowing in.
+I used that mass balance to test whether three U.S. Geological Survey river gauges can be trusted, then built models to forecast the river up to a day ahead.</p>
+<p class="muted">2022-01-01 to 2025-12-31 · 15-minute USGS data · Python, polars, scikit-learn</p>
+
+<div class="kpis">
+<div class="kpi"><b>0.93M</b><span>sensor readings checked</span></div>
+<div class="kpi"><b>4.7%</b><span>flagged as unreliable: estimated, stuck, spiking or missing</span></div>
+<div class="kpi"><b>+5.1%</b><span>median daily gap between inflow and outflow</span></div>
+<div class="kpi"><b>20%</b><span>Boosted trees: reduction in 12-hour forecast error vs. assuming no change</span></div>
+</div>
+
+<h2>The setup</h2>
+<div class="diagram">Upper Hudson      (USGS 01335754) ─┐
+                                   ├─►  Green Island (USGS 01358000)
+Mohawk at Cohoes  (USGS 01357500) ─┘
+
+Water:  Q_GreenIsland(t) = Q_Hudson(t - lag1) + Q_Mohawk(t - lag2)
+Salt:   C_GreenIsland    = (Q_Hudson*C_Hudson + Q_Mohawk*C_Mohawk) / (Q_Hudson + Q_Mohawk)</div>
+<p>Each 15-minute reading is checked for USGS quality codes, stuck values, one-point spikes and gaps. Readings that pass are averaged hourly and run through the balance. Travel times between gauges are fitted jointly, since fitting each tributary on its own gives the wrong answer when one storm hits both basins.</p>
+
+<h2>Do the gauges add up?</h2>
+<p>On a typical day, yes: the median gap is +5.1%. Hour to hour it is noisier (13.5% median absolute), which points to dam and lock operations releasing water in pulses rather than to faulty sensors.</p>
+<p>The gap has a clear season. It is near +1.0% in winter and climbs to +19.3% in September:</p>
+<div class="months" aria-label="Median daily mismatch by month"><div class="" style="height:2%" title="January: +0.3%"></div><div class="" style="height:2%" title="February: -5.8%"></div><div class="" style="height:9%" title="March: +1.7%"></div><div class="" style="height:7%" title="April: +1.4%"></div><div class="" style="height:4%" title="May: +0.8%"></div><div class="" style="height:41%" title="June: +7.9%"></div><div class="" style="height:2%" title="July: -1.4%"></div><div class="" style="height:41%" title="August: +7.8%"></div><div class="hi" style="height:100%" title="September: +19.3%"></div><div class="" style="height:74%" title="October: +14.3%"></div><div class="" style="height:77%" title="November: +14.9%"></div><div class="" style="height:24%" title="December: +4.7%"></div></div>
+<div class="mlabels"><span>Jan</span><span>Feb</span><span>Mar</span><span>Apr</span><span>May</span><span>Jun</span><span>Jul</span><span>Aug</span><span>Sep</span><span>Oct</span><span>Nov</span><span>Dec</span></div>
+<p class="muted" style="margin-top:.75rem">Median daily mismatch by calendar month. Positive means Green Island carried more water than the two upstream gauges.</p>
+<p><b>Working explanation:</b> part of the Mohawk is diverted into the Barge Canal upstream of the Cohoes gauge, and the canal's locks at Waterford return it to the Hudson between the upstream gauges and Green Island. That water reaches Green Island without passing either upstream gauge. A roughly constant diversion is a bigger share of the river at low autumn flows, which matches the pattern. The next test is to line the gap up against the canal's opening and closing dates.</p>
+<figure><img src="img/flow_balance.png" alt="Hourly flow balance: measured flow at Green Island against the lagged sum of the upstream gauges, and the residual." loading="lazy"><figcaption>Hourly flow balance: measured flow at Green Island against the lagged sum of the upstream gauges, and the residual.</figcaption></figure>
+
+<h2>How trustworthy is each gauge?</h2>
+<div class="tablewrap"><table><thead><tr><th>Discharge gauge</th><th>Readings</th><th>Flagged</th><th>Estimated</th><th>Stuck</th><th>Spikes</th><th>Provisional</th></tr></thead>
+<tbody><tr><td>Green Island (01358000)</td><td>114,602</td><td>3.6%</td><td>3,813</td><td>0</td><td>306</td><td>2,534</td></tr><tr><td>Mohawk at Cohoes (01357500)</td><td>139,824</td><td>0.3%</td><td>0</td><td>89</td><td>278</td><td>0</td></tr><tr><td>Upper Hudson (01335754)</td><td>139,343</td><td>4.8%</td><td>2,320</td><td>4,190</td><td>175</td><td>3,411</td></tr></tbody></table></div>
+<p class="muted" style="margin-top:.75rem">Findings worth knowing: for most of 2024 Green Island published only 2-hourly estimated values, and the Mohawk's conductance and temperature sensors were stuck or spiking for long stretches.</p>
+
+<h2>Forecasting Green Island</h2>
+<p>Five models predict flow 6 to 24 hours ahead using upstream flows and basin rainfall. They are tested walk-forward: always trained on the past and scored on the future, with an embargo so no training target overlaps the test period. Skill is the share of error removed compared with assuming the flow stays the same.</p>
+<div class="tablewrap"><table><thead><tr><th>Horizon</th><th>Mass balance</th><th>Linear (ridge)</th><th>Boosted trees</th><th>Balance + trees</th><th>90% interval coverage</th></tr></thead><tbody><tr><td>6 h ahead</td><td class="neg">-32%</td><td class="neg">-3%</td><td class="best">+13%</td><td class="">+7%</td><td>90%</td></tr><tr><td>12 h ahead</td><td class="neg">-15%</td><td class="">+4%</td><td class="best">+20%</td><td class="">+17%</td><td>90%</td></tr><tr><td>24 h ahead</td><td class="neg">-17%</td><td class="best">+17%</td><td class="">+14%</td><td class="">+11%</td><td>90%</td></tr></tbody></table></div>
+<p class="muted" style="margin-top:.75rem">Best model per horizon in green; negative skill means worse than assuming no change. Prediction intervals are calibrated with conformal prediction, so about 90% of real outcomes should fall inside.</p>
+<figure><img src="img/storm_forecast.png" alt="The largest storm in the test period: forecasts made 12 hours ahead against what Green Island measured." loading="lazy"><figcaption>The largest storm in the test period: forecasts made 12 hours ahead against what Green Island measured.</figcaption></figure>
+<figure><img src="img/skill_by_horizon.png" alt="Forecast skill by horizon, including ablations without rainfall and without upstream gauges." loading="lazy"><figcaption>Forecast skill by horizon, including ablations without rainfall and without upstream gauges.</figcaption></figure>
+
+<h2>What I learned</h2>
+<ul>
+<li>Physics found problems rules could not. A sensor drifting out of calibration still reports plausible numbers; only the balance against its neighbours exposes it.</li>
+<li>Real data broke assumptions that synthetic data never tested: a date-range bug that dropped every December 31st, USGS changing its quality codes between APIs, and a sensor that only existed for six weeks.</li>
+<li>The simple mass-balance forecast lost to "no change" on the real river, because of water the gauges cannot see. Reporting that honestly is more useful than hiding it.</li>
+</ul>
+
+<footer><a href="https://github.com/HughFOD/hudson-flow">Code on GitHub</a> · Data: U.S. Geological Survey Water Data API; rainfall from Open-Meteo. Generated October 27, 2026 from run <code>2022-01-01_2025-12-31</code>.</footer>
+</main></body></html>

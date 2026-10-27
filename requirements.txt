@@ -1,0 +1,10 @@
+dataretrieval>=1.1.4
+geopandas
+polars>=1.0
+pyarrow
+numpy
+pandas
+scikit-learn>=1.4
+matplotlib
+requests
+pytest
