@@ -114,6 +114,7 @@ a{color:var(--accent)}
 figure{margin:1.5rem 0;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:1rem}
 figure img{display:block;width:100%;height:auto;border-radius:4px;background:#fff}
 figcaption{font-size:.85rem;color:var(--muted);margin-top:.6rem}
+.flow{margin:1rem 0;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:.75rem 1rem}.flow svg{display:block;max-width:660px;margin:0 auto}.flow .river{fill:none;stroke:var(--accent);stroke-width:5;stroke-linecap:round}.flow .arrow{fill:none;stroke:var(--accent);stroke-width:4;stroke-linecap:round;stroke-linejoin:round}.flow .g{fill:var(--panel);stroke:var(--fg);stroke-width:2.5}.flow text{fill:var(--fg);font:500 15px var(--sans)}
 .diagram{font:400 .85rem/1.5 var(--mono);background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:1rem;overflow-x:auto;white-space:pre}
 .tablewrap{overflow-x:auto;background:var(--panel);border:1px solid var(--line);border-radius:10px}
 table{border-collapse:collapse;width:100%;font-size:.88rem;font-variant-numeric:tabular-nums}
@@ -124,7 +125,7 @@ tr:last-child td{border-bottom:0}td.best{color:var(--ok);font-weight:600}td.neg{
 .months div{background:var(--line);border-radius:4px 4px 0 0;min-height:2px;position:relative}
 .months div.hi{background:var(--accent2)}
 .mlabels{display:grid;grid-template-columns:repeat(12,1fr);gap:4px;font:400 .7rem var(--mono);color:var(--muted);text-align:center}
-ul{padding-left:1.2rem;max-width:65ch}li{margin:.3rem 0}
+ul,ol{padding-left:1.2rem;max-width:65ch}li{margin:.3rem 0}
 code{font-family:var(--mono);font-size:.88em}
 footer{margin-top:4rem;font-size:.85rem;color:var(--muted);border-top:1px solid var(--line);padding-top:1rem}
 """
@@ -224,14 +225,25 @@ I used that mass balance to test whether three U.S. Geological Survey river gaug
 <div class="kpi"><b>{best12[1]:.0%}</b><span>{e(best_txt.split(' cut')[0])}: reduction in 12-hour forecast error vs. assuming no change</span></div>
 </div>
 
-<h2>The setup</h2>
-<div class="diagram">Upper Hudson      (USGS 01335754) ─┐
-                                   ├─►  Green Island (USGS 01358000)
-Mohawk at Cohoes  (USGS 01357500) ─┘
-
-Water:  Q_GreenIsland(t) = Q_Hudson(t - lag1) + Q_Mohawk(t - lag2)
-Salt:   C_GreenIsland    = (Q_Hudson*C_Hudson + Q_Mohawk*C_Mohawk) / (Q_Hudson + Q_Mohawk)</div>
-<p>Each 15-minute reading is checked for USGS quality codes, stuck values, one-point spikes and gaps. Readings that pass are averaged hourly and run through the balance. Travel times between gauges are fitted jointly, since fitting each tributary on its own gives the wrong answer when one storm hits both basins.</p>
+<h2>How it works</h2>
+<p>Two rivers meet near Troy, New York: the upper Hudson and the Mohawk. The U.S. Geological Survey has a gauge on each one, measuring how much water flows past every 15 minutes, and a third gauge just downstream at Green Island, where the two have combined.</p>
+<figure class="flow" aria-label="The upper Hudson and Mohawk gauges both flow into the Green Island gauge">
+<svg viewBox="0 0 660 150" width="100%" role="img">
+<path d="M200 38 C 300 38, 310 75, 380 75" class="river"/>
+<path d="M200 112 C 300 112, 310 75, 380 75" class="river"/>
+<path d="M380 75 L 445 75" class="river"/><path d="M443 67 L 455 75 L 443 83" class="arrow"/>
+<circle cx="190" cy="38" r="7" class="g"/><circle cx="190" cy="112" r="7" class="g"/><circle cx="470" cy="75" r="7" class="g"/>
+<text x="176" y="43" text-anchor="end">Upper Hudson gauge</text>
+<text x="176" y="117" text-anchor="end">Mohawk gauge</text>
+<text x="484" y="80">Green Island gauge</text>
+</svg></figure>
+<p>Water doesn't appear or disappear, so the water passing Green Island should equal what came down the two rivers an hour or two earlier. When the numbers don't add up, either a gauge is wrong or water is getting in or out somewhere nobody measures. That simple rule is the core of the project. It does four things:</p>
+<ol>
+<li><b>Checks every reading</b> for problems like stuck sensors, sudden fake spikes, ice, and values USGS had to estimate.</li>
+<li><b>Checks that the water adds up</b> between the three gauges, and investigates where it doesn't.</li>
+<li><b>Forecasts the river</b> at Green Island 6 to 24 hours ahead, using the upstream gauges and rainfall.</li>
+<li><b>Compares two ways of spotting bad data</b>: simple rules versus a machine-learning model.</li>
+</ol>
 
 <h2>Do the gauges add up?</h2>
 <p>Mostly, yes: the median daily gap is {pct(s['daily_median'], True)}. Hour to hour it is noisier ({pct(s['hourly_abs'])} median absolute), which points to dam and lock operations releasing water in pulses rather than to faulty sensors.</p>
