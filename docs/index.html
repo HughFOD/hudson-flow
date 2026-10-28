@@ -1,7 +1,7 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Hudson River Gauge Check</title>
-<meta name="description" content="Can you trust a river gauge? Checking four years of USGS data on the Hudson and Mohawk with a mass balance, and forecasting the river with machine learning.">
+<meta name="description" content="A mass-balance check of three USGS streamflow gauges on the Hudson and Mohawk rivers, 2022–2025, with machine-learning flow forecasts.">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"><style>
 :root{--paper:#f6f8f9;--panel:#ffffff;--ink:#0e1f26;--muted:#4f646c;--line:#d5dfe2;
@@ -20,7 +20,7 @@ a{color:var(--river)}a:focus-visible,.btn:focus-visible{outline:2px solid var(--
 .hero{background:var(--hero);color:var(--hero-ink);position:relative;overflow:hidden}
 .hero .wrap{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:3rem;align-items:center;padding-top:4.5rem;padding-bottom:4.5rem}
 .eyebrow{font:500 .78rem/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--signal)}
-h1{font:800 clamp(2.4rem,6vw,4.4rem)/1.02 var(--display);font-stretch:112%;letter-spacing:-.02em;margin:.9rem 0 1.2rem;text-wrap:balance}
+h1{font:700 clamp(1.6rem,2.9vw,2.35rem)/1.18 var(--display);font-stretch:100%;letter-spacing:-.01em;margin:.9rem 0 1.2rem;text-wrap:balance}
 .lede{font-size:1.2rem;line-height:1.55;color:var(--hero-ink);max-width:36rem;margin:0 0 1.6rem}
 .answer{border-left:3px solid var(--signal);padding:.2rem 0 .2rem 1rem;margin:0 0 2rem;max-width:36rem}
 .answer b{display:block;font:700 1.05rem var(--display);font-stretch:105%;margin-bottom:.3rem;color:#fff}
@@ -34,6 +34,8 @@ h1{font:800 clamp(2.4rem,6vw,4.4rem)/1.02 var(--display);font-stretch:112%;lette
 .confluence .n{fill:#e6f0f1;font:600 15px var(--body)}
 .confluence .q{fill:#f0c25a;font:500 13px var(--mono)}
 .confluence .eq{fill:#9db5ba;font:500 13px var(--mono)}
+.unit{margin:.6rem auto 0;max-width:30rem;font-size:.92rem;line-height:1.5;color:var(--hero-muted);border-top:1px solid #1f3a43;padding-top:.7rem}
+.unit b{color:#f0c25a;font:600 .9rem var(--mono)}
 .ticks{position:absolute;right:0;top:0;bottom:0;width:22px;border-left:1px solid #1f3a43;
 background:repeating-linear-gradient(to bottom,#2c4a54 0 1px,transparent 1px 12px);opacity:.7}
 /* stats strip */
@@ -83,14 +85,15 @@ footer{margin-top:4rem;padding:2rem 0 3rem;border-top:1px solid var(--line);font
 <header class="hero"><div class="ticks" aria-hidden="true"></div><div class="wrap">
   <div>
     <div class="eyebrow">Data validation · Hudson River, New York</div>
-    <h1>Can you trust a river gauge?</h1>
-    <p class="lede">Government river gauges feed flood warnings, water supply and research, and people mostly take
-    their numbers on trust. I checked four years of them using one rule from chemical engineering:
-    <b>water can't appear or disappear.</b></p>
-    <div class="answer"><b>What I found</b><span>Mostly yes, but not always. For a year, from December 2022 to November 2023, the gauges disagreed by about 2,600 cubic feet per second, which points to a calibration error at one of them.</span></div>
+    <h1>Mass-Balance Validation of Streamflow Gauges at the Hudson–Mohawk Confluence</h1>
+    <p class="lede">The U.S. Geological Survey records river flow every 15 minutes at gauges across the country, and
+    the data are used for flood forecasting, water management and research. This project checks three neighbouring
+    gauges against each other over four years, using a basic principle of chemical engineering:
+    <b>water is conserved</b>, so the flow in must equal the flow out.</p>
+    <div class="answer"><b>Main result</b><span>On a typical day the gauges agree to within 5%. The exception is December 2022 to November 2023, when they disagreed by about 2,600 cubic feet per second, which points to a calibration error at one gauge.</span></div>
     <div class="btns"><a class="btn primary" href="#findings">See the findings</a><a class="btn ghost" href="https://github.com/HughFOD/hudson-flow">Code on GitHub</a></div>
   </div>
-  <svg class="confluence" viewBox="0 0 520 330" role="img" aria-label="The upper Hudson and Mohawk rivers join and flow past the Green Island gauge">
+  <div><svg class="confluence" viewBox="0 0 520 330" role="img" aria-label="The upper Hudson and Mohawk rivers join and flow past the Green Island gauge">
     <path class="r" d="M70 60 C 210 60, 230 165, 330 165" stroke-width="8.2"/>
     <path class="r" d="M70 270 C 210 270, 230 165, 330 165" stroke-width="5.9"/>
     <path class="r" d="M330 165 L 440 165" stroke-width="12.0"/>
@@ -100,6 +103,8 @@ footer{margin-top:4rem;padding:2rem 0 3rem;border-top:1px solid var(--line);font
     <text class="n" x="450" y="138" text-anchor="end">Green Island</text><text class="q" x="450" y="200" text-anchor="end">12,775 cfs</text>
     <text class="eq" x="260" y="322" text-anchor="middle">median flow 2022–2025 · line width to scale</text>
   </svg>
+  <p class="unit"><b>cfs</b> = cubic feet per second, the volume of water flowing past a gauge each second.
+  One cubic foot is about 28 litres, so Green Island's typical 12,775 cfs is roughly 360,000 litres every second.</p></div>
 </div></header>
 
 <div class="strip"><div class="wrap">
@@ -162,8 +167,8 @@ footer{margin-top:4rem;padding:2rem 0 3rem;border-top:1px solid var(--line);font
   <div class="evidence"><div class="callout"><b>Next test, in progress.</b> USGS crews measure each river by hand several times a year, and the gauges are calibrated against those visits. Comparing each gauge with the hand measurements during the offset year will show which one drifted.</div></div>
 </div>
 <div class="finding">
-  <div><div class="tag">Finding 4</div><h3>Bad data is common if you look for it</h3>
-  <p>4.7% of all readings failed a quality check. For most of 2024 Green Island
+  <div><div class="tag">Finding 4</div><h3>4.7% of readings needed a quality flag</h3>
+  <p>Most flags are routine: periods USGS marks as estimated, often because of ice, plus stuck or spiking sensors. For most of 2024 Green Island
   only published estimated values every two hours, and the Mohawk's salt and temperature sensors were stuck or
   spiking for long stretches. Real data also exposed bugs synthetic data never did, like a download that silently
   dropped every December 31st.</p></div>

@@ -117,7 +117,7 @@ a{color:var(--river)}a:focus-visible,.btn:focus-visible{outline:2px solid var(--
 .hero{background:var(--hero);color:var(--hero-ink);position:relative;overflow:hidden}
 .hero .wrap{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:3rem;align-items:center;padding-top:4.5rem;padding-bottom:4.5rem}
 .eyebrow{font:500 .78rem/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--signal)}
-h1{font:800 clamp(2.4rem,6vw,4.4rem)/1.02 var(--display);font-stretch:112%;letter-spacing:-.02em;margin:.9rem 0 1.2rem;text-wrap:balance}
+h1{font:700 clamp(1.6rem,2.9vw,2.35rem)/1.18 var(--display);font-stretch:100%;letter-spacing:-.01em;margin:.9rem 0 1.2rem;text-wrap:balance}
 .lede{font-size:1.2rem;line-height:1.55;color:var(--hero-ink);max-width:36rem;margin:0 0 1.6rem}
 .answer{border-left:3px solid var(--signal);padding:.2rem 0 .2rem 1rem;margin:0 0 2rem;max-width:36rem}
 .answer b{display:block;font:700 1.05rem var(--display);font-stretch:105%;margin-bottom:.3rem;color:#fff}
@@ -131,6 +131,8 @@ h1{font:800 clamp(2.4rem,6vw,4.4rem)/1.02 var(--display);font-stretch:112%;lette
 .confluence .n{fill:#e6f0f1;font:600 15px var(--body)}
 .confluence .q{fill:#f0c25a;font:500 13px var(--mono)}
 .confluence .eq{fill:#9db5ba;font:500 13px var(--mono)}
+.unit{margin:.6rem auto 0;max-width:30rem;font-size:.92rem;line-height:1.5;color:var(--hero-muted);border-top:1px solid #1f3a43;padding-top:.7rem}
+.unit b{color:#f0c25a;font:600 .9rem var(--mono)}
 .ticks{position:absolute;right:0;top:0;bottom:0;width:22px;border-left:1px solid #1f3a43;
 background:repeating-linear-gradient(to bottom,#2c4a54 0 1px,transparent 1px 12px);opacity:.7}
 /* stats strip */
@@ -224,12 +226,13 @@ def build(root: Path) -> Path:
     # --- the story -------------------------------------------------------------
     if per:
         p_start, p_end = date.fromisoformat(per["start"]), date.fromisoformat(per["end"])
-        answer = (f"Mostly yes, but not always. For a year, from {p_start:%B %Y} to {p_end:%B %Y}, "
-                  f"the gauges disagreed by about {round(per['median_gap_cfs'], -2):,.0f} cubic feet per second, "
-                  f"which points to a calibration error at one of them.")
+        answer = (f"On a typical day the gauges agree to within {pct(abs(s['daily_median']), d=0)}. The exception is "
+                  f"{p_start:%B %Y} to {p_end:%B %Y}, when they disagreed by about "
+                  f"{round(per['median_gap_cfs'], -2):,.0f} cubic feet per second, which points to a calibration "
+                  f"error at one gauge.")
         stat3 = (f"{per['months']} months", "when one gauge appears to have drifted out of calibration")
     else:
-        answer = "Mostly yes. Where they disagree, the project tracks down why."
+        answer = f"On a typical day the gauges agree to within {pct(abs(s['daily_median']), d=0)}."
         stat3 = (pct(s["daily_median"], True), "typical daily gap between inflow and outflow")
 
     canal_block = ""
@@ -274,21 +277,22 @@ def build(root: Path) -> Path:
     page = f"""<!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Hudson River Gauge Check</title>
-<meta name="description" content="Can you trust a river gauge? Checking four years of USGS data on the Hudson and Mohawk with a mass balance, and forecasting the river with machine learning.">
+<meta name="description" content="A mass-balance check of three USGS streamflow gauges on the Hudson and Mohawk rivers, 2022–2025, with machine-learning flow forecasts.">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="{FONTS}" rel="stylesheet"><style>{CSS}</style></head><body>
 
 <header class="hero"><div class="ticks" aria-hidden="true"></div><div class="wrap">
   <div>
     <div class="eyebrow">Data validation · Hudson River, New York</div>
-    <h1>Can you trust a river gauge?</h1>
-    <p class="lede">Government river gauges feed flood warnings, water supply and research, and people mostly take
-    their numbers on trust. I checked four years of them using one rule from chemical engineering:
-    <b>water can't appear or disappear.</b></p>
-    <div class="answer"><b>What I found</b><span>{e(answer)}</span></div>
+    <h1>Mass-Balance Validation of Streamflow Gauges at the Hudson–Mohawk Confluence</h1>
+    <p class="lede">The U.S. Geological Survey records river flow every 15 minutes at gauges across the country, and
+    the data are used for flood forecasting, water management and research. This project checks three neighbouring
+    gauges against each other over four years, using a basic principle of chemical engineering:
+    <b>water is conserved</b>, so the flow in must equal the flow out.</p>
+    <div class="answer"><b>Main result</b><span>{e(answer)}</span></div>
     <div class="btns"><a class="btn primary" href="#findings">See the findings</a>{repo}</div>
   </div>
-  <svg class="confluence" viewBox="0 0 520 330" role="img" aria-label="The upper Hudson and Mohawk rivers join and flow past the Green Island gauge">
+  <div><svg class="confluence" viewBox="0 0 520 330" role="img" aria-label="The upper Hudson and Mohawk rivers join and flow past the Green Island gauge">
     <path class="r" d="M70 60 C 210 60, 230 165, 330 165" stroke-width="{3 + 9 * q['upper_hudson'] / max(q.values()):.1f}"/>
     <path class="r" d="M70 270 C 210 270, 230 165, 330 165" stroke-width="{3 + 9 * q['mohawk'] / max(q.values()):.1f}"/>
     <path class="r" d="M330 165 L 440 165" stroke-width="{3 + 9 * q['green_island'] / max(q.values()):.1f}"/>
@@ -298,6 +302,8 @@ def build(root: Path) -> Path:
     <text class="n" x="450" y="138" text-anchor="end">Green Island</text><text class="q" x="450" y="200" text-anchor="end">{q['green_island']:,.0f} cfs</text>
     <text class="eq" x="260" y="322" text-anchor="middle">median flow 2022–2025 · line width to scale</text>
   </svg>
+  <p class="unit"><b>cfs</b> = cubic feet per second, the volume of water flowing past a gauge each second.
+  One cubic foot is about 28 litres, so Green Island's typical {q['green_island']:,.0f} cfs is roughly {round(q['green_island'] * 28.3168, -4):,.0f} litres every second.</p></div>
 </div></header>
 
 <div class="strip"><div class="wrap">
@@ -340,8 +346,8 @@ def build(root: Path) -> Path:
 {canal_block}
 {step_block}
 <div class="finding">
-  <div><div class="tag">Finding 4</div><h3>Bad data is common if you look for it</h3>
-  <p>{pct(100 * s['flagged'] / s['readings'])} of all readings failed a quality check. For most of 2024 Green Island
+  <div><div class="tag">Finding 4</div><h3>{pct(100 * s['flagged'] / s['readings'])} of readings needed a quality flag</h3>
+  <p>Most flags are routine: periods USGS marks as estimated, often because of ice, plus stuck or spiking sensors. For most of 2024 Green Island
   only published estimated values every two hours, and the Mohawk's salt and temperature sensors were stuck or
   spiking for long stretches. Real data also exposed bugs synthetic data never did, like a download that silently
   dropped every December 31st.</p></div>
