@@ -285,10 +285,10 @@ def build(root: Path) -> Path:
   <div>
     <div class="eyebrow">Data validation · Hudson River, New York</div>
     <h1>Mass-Balance Validation of Streamflow Gauges at the Hudson–Mohawk Confluence</h1>
-    <p class="lede">The U.S. Geological Survey records river flow every 15 minutes at gauges across the country, and
-    the data are used for flood forecasting, water management and research. This project checks three neighbouring
-    gauges against each other over four years, using a basic principle of chemical engineering:
-    <b>water is conserved</b>, so the flow in must equal the flow out.</p>
+    <p class="lede">The U.S. Geological Survey measures river flow at gauges across the country. Its data are used
+    for flood forecasting, water management and research. This project checks three neighbouring gauges against
+    each other over four years. The test is a basic principle of chemical engineering: <b>water is conserved</b>,
+    so the flow in must equal the flow out.</p>
     <div class="answer"><b>Main result</b><span>{e(answer)}</span></div>
     <div class="btns"><a class="btn primary" href="#findings">See the findings</a>{repo}</div>
   </div>
