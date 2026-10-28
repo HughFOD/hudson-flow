@@ -218,7 +218,7 @@ I used that mass balance to test whether three U.S. Geological Survey river gaug
 <p class="muted">{e(s['start'])} to {e(s['end'])} · 15-minute USGS data · Python, polars, scikit-learn</p>
 
 <div class="kpis">
-<div class="kpi"><b>{s['readings'] / 1e6:.2f}M</b><span>sensor readings checked</span></div>
+<div class="kpi"><b>{s['readings']:,}</b><span>sensor readings checked</span></div>
 <div class="kpi"><b>{pct(100 * s['flagged'] / s['readings'])}</b><span>flagged as unreliable: estimated, stuck, spiking or missing</span></div>
 <div class="kpi"><b>{pct(s['daily_median'], True)}</b><span>median daily gap between inflow and outflow</span></div>
 <div class="kpi"><b>{best12[1]:.0%}</b><span>{e(best_txt.split(' cut')[0])}: reduction in 12-hour forecast error vs. assuming no change</span></div>
