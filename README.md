@@ -83,7 +83,7 @@ including a slow calibration drift that has no qualifier and no stuck values:
 ## Known physical complications on the real river
 
 - **Barge Canal diversion:** the Mohawk gauge sits downstream of where water is diverted
-  into the canal at Crescent Dam. Tested against the real season dates, it turned out too
+  into the canal at Crescent Dam. Tested against the real season dates, it is too
   small to explain the gap (see Findings).
 - **Tides:** below the Troy dam the Hudson is tidal, which is why the balance point is above it.
 - **Ice:** upstate winters produce ice-affected readings, which are flagged and excluded.
@@ -131,14 +131,12 @@ reports go to `output/`.
 - Upper Hudson discharge: 4.8% flagged, mostly a 4,190-reading stuck stretch and 2,320 estimated values.
 - Green Island discharge: for most of 2024 USGS published only 2-hourly *estimated* values, so most of 2024 drops out of the balance and the models.
 - Mohawk conductance and temperature sensors were stuck or spiking 29% and 22% of the time.
-- Bugs real data exposed that synthetic data never did: the download dropped every December 31st, the new USGS API spells quality codes differently from the old one (so ice and estimated flags were initially missed), and Green Island measured conductance for only six weeks, which crashed the anomaly model.
 
 **Does the balance close?** On a typical day, yes: median daily gap +5.1%. Hour to hour it is
 noisier (13.5% median absolute), consistent with dam and lock operations releasing water in pulses.
 
-**The canal hypothesis was wrong.** My first explanation for the gap was the Barge Canal, which
-diverts Mohawk water around the Cohoes gauge and returns it to the Hudson above Green Island.
-Tested against the actual navigation seasons (2022–2025), the gap in cfs is the same with the
+**The canal does not explain the gap.** The Barge Canal diverts Mohawk water around the Cohoes
+gauge and returns it to the Hudson above Green Island, so it was the obvious candidate. Tested against the actual navigation seasons (2022–2025), the gap in cfs is the same with the
 canal open (591 cfs) as closed (639 cfs), and moved the expected way at only 3 of 5 openings and
 closings. It only looked seasonal in percent because summer flows are low (6,640 vs 18,440 cfs).
 

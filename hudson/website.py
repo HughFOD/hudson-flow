@@ -239,11 +239,11 @@ def build(root: Path) -> Path:
     if inv:
         canal_block = f"""
 <div class="finding">
-  <div><div class="tag warn">Finding 2</div><h3>My first explanation was wrong</h3>
-  <p>The gap looked seasonal, so I suspected the Erie Canal, which diverts part of the Mohawk around its gauge
-  and returns it to the Hudson above Green Island. I tested that against the canal's real opening and closing
-  dates for 2022–2025.</p>
-  <p>It doesn't hold up. In cubic feet per second the gap is the same with the canal open
+  <div><div class="tag warn">Finding 2</div><h3>The canal does not explain the gap</h3>
+  <p>The gap looks seasonal, and the Erie Canal diverts part of the Mohawk around its gauge and returns it to the
+  Hudson above Green Island, so it is the obvious candidate. I tested it against the canal's real opening and
+  closing dates for 2022–2025.</p>
+  <p>The canal is not the cause. In cubic feet per second the gap is the same with the canal open
   ({inv['gap_open_cfs']:,.0f}) as closed ({inv['gap_closed_cfs']:,.0f}), and it moved the expected way at only
   {inv['events_consistent']} of {inv['events_total']} openings and closings. It only <i>looked</i> seasonal in
   percent terms, because the river is low in late summer.</p></div>
@@ -349,8 +349,7 @@ def build(root: Path) -> Path:
   <div><div class="tag">Finding 4</div><h3>{pct(100 * s['flagged'] / s['readings'])} of readings needed a quality flag</h3>
   <p>Most flags are routine: periods USGS marks as estimated, often because of ice, plus stuck or spiking sensors. For most of 2024 Green Island
   only published estimated values every two hours, and the Mohawk's salt and temperature sensors were stuck or
-  spiking for long stretches. Real data also exposed bugs synthetic data never did, like a download that silently
-  dropped every December 31st.</p></div>
+  spiking for long stretches.</p></div>
   <div class="evidence"><div class="tablewrap"><table><thead><tr><th>Flow gauge</th><th>Readings</th><th>Flagged</th><th>Estimated</th><th>Stuck</th><th>Spikes</th></tr></thead>
   <tbody>{grows}</tbody></table></div></div>
 </div>
@@ -371,7 +370,7 @@ def build(root: Path) -> Path:
   <h2>What I learned</h2>
   <div class="learned">
     <div><b>Physics beats rules</b><span>A sensor drifting out of calibration still reports believable numbers. Only checking it against its neighbours exposes it.</span></div>
-    <div><b>Test your own explanation</b><span>The canal story fitted the percentages perfectly and was wrong. Measuring in cfs and checking real dates found the actual cause.</span></div>
+    <div><b>Units matter</b><span>In percent, the gap looked seasonal. In cubic feet per second it clearly wasn't, which ruled out the canal and pointed to the real cause.</span></div>
     <div><b>Report what lost</b><span>The simple physics forecast lost to "no change". Saying so is more useful than hiding it.</span></div>
   </div>
 </section>
