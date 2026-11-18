@@ -95,115 +95,74 @@ def pct(v, signed=False, d=1):
 
 
 
-FONTS = ("https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800"
-         "&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap")
+FONTS = ("https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700"
+         "&family=Source+Sans+3:wght@400;500;600&display=swap")
 
-# Layout: a dark "river at night" hero that states the question and the answer,
-# then the story told as findings, each a headline + explanation + evidence.
+# A plain research write-up: one column, numbered sections, captioned figures,
+# simple ruled tables. One accent colour, used for links and one data series.
 CSS = """
-:root{--paper:#f6f8f9;--panel:#ffffff;--ink:#0e1f26;--muted:#4f646c;--line:#d5dfe2;
---river:#0f5e6e;--river2:#3a9bb0;--signal:#d99a1e;--bad:#b4462d;--good:#1f7a4d;
---hero:#0b1d24;--hero-ink:#e6f0f1;--hero-muted:#9db5ba;
---display:"Archivo",system-ui,sans-serif;--body:"Instrument Sans",system-ui,sans-serif;--mono:"JetBrains Mono",ui-monospace,monospace}
-@media (prefers-color-scheme:dark){:root{--paper:#0d1518;--panel:#132027;--ink:#e3ecee;--muted:#9ab0b6;--line:#24363d;
---river:#5fc0d3;--river2:#8ad6e4;--signal:#f0c25a;--bad:#ef8a6f;--good:#6fd39f;--hero:#071216;color-scheme:dark}}
-*{box-sizing:border-box}html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
-@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
-body{margin:0;background:var(--paper);color:var(--ink);font:17px/1.6 var(--body)}
-a{color:var(--river)}a:focus-visible,.btn:focus-visible{outline:2px solid var(--signal);outline-offset:3px}
-.wrap{max-width:68rem;margin:0 auto;padding-left:max(20px,env(safe-area-inset-left));padding-right:max(20px,env(safe-area-inset-right))}
-.narrow{max-width:44rem}
-/* hero */
-.hero{background:var(--hero);color:var(--hero-ink);position:relative;overflow:hidden}
-.hero .wrap{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:3rem;align-items:center;padding-top:4.5rem;padding-bottom:4.5rem}
-.eyebrow{font:500 .78rem/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--signal)}
-h1{font:700 clamp(1.6rem,2.9vw,2.35rem)/1.18 var(--display);font-stretch:100%;letter-spacing:-.01em;margin:.9rem 0 1.2rem;text-wrap:balance}
-.lede{font-size:1.2rem;line-height:1.55;color:var(--hero-ink);max-width:36rem;margin:0 0 1.6rem}
-.answer{border-left:3px solid var(--signal);padding:.2rem 0 .2rem 1rem;margin:0 0 2rem;max-width:36rem}
-.answer b{display:block;font:700 1.05rem var(--display);font-stretch:105%;margin-bottom:.3rem;color:#fff}
-.answer span{color:var(--hero-muted);font-size:1rem}
-.btns{display:flex;flex-wrap:wrap;gap:.75rem}
-.btn{display:inline-block;padding:.7rem 1.15rem;border-radius:999px;font:600 .95rem var(--body);text-decoration:none}
-.btn.primary{background:var(--signal);color:#1a1405}.btn.ghost{color:var(--hero-ink);border:1px solid #3b5660}
-.confluence{width:100%;height:auto;display:block}
-.confluence .r{fill:none;stroke:#3a9bb0;stroke-linecap:round}
-.confluence .g{fill:var(--hero);stroke:#e6f0f1;stroke-width:2.5}
-.confluence .n{fill:#e6f0f1;font:600 15px var(--body)}
-.confluence .q{fill:#f0c25a;font:500 13px var(--mono)}
-.confluence .eq{fill:#9db5ba;font:500 13px var(--mono)}
-.unit{margin:.6rem auto 0;max-width:30rem;font-size:.92rem;line-height:1.5;color:var(--hero-muted);border-top:1px solid #1f3a43;padding-top:.7rem}
-.unit b{color:#f0c25a;font:600 .9rem var(--mono)}
-.ticks{position:absolute;right:0;top:0;bottom:0;width:22px;border-left:1px solid #1f3a43;
-background:repeating-linear-gradient(to bottom,#2c4a54 0 1px,transparent 1px 12px);opacity:.7}
-/* stats strip */
-.strip{background:var(--panel);border-bottom:1px solid var(--line)}
-.strip .wrap{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0}
-.stat{padding:1.5rem 1.25rem 1.4rem;border-right:1px solid var(--line)}.stat:last-child{border-right:0}
-.stat b{display:block;font:700 clamp(1.5rem,3vw,2.1rem)/1.1 var(--display);font-stretch:108%;font-variant-numeric:tabular-nums;color:var(--river)}
-.stat span{display:block;margin-top:.35rem;font-size:.9rem;color:var(--muted);line-height:1.4}
-/* sections */
-section{padding:4.5rem 0 1rem}
-h2{font:800 clamp(1.7rem,3.4vw,2.4rem)/1.12 var(--display);font-stretch:108%;letter-spacing:-.01em;margin:0 0 1rem;text-wrap:balance}
-h3{font:700 clamp(1.3rem,2.4vw,1.6rem)/1.2 var(--display);font-stretch:105%;margin:.35rem 0 .8rem;text-wrap:balance}
-p{margin:0 0 1rem}.muted{color:var(--muted)}
-.idea{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:2.5rem;align-items:center}
-.equation{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.4rem 1.5rem;font:500 1rem/1.9 var(--mono)}
-.equation .big{font:700 1.25rem var(--display);font-stretch:105%;color:var(--ink);display:block;margin-bottom:.4rem}
-.equation em{font-style:normal;color:var(--river)}
-.steps{list-style:none;padding:0;margin:1.5rem 0 0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1rem}
-.steps li{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:1rem 1.1rem}
-.steps b{display:block;font:700 1rem var(--display);margin-bottom:.25rem}.steps span{font-size:.93rem;color:var(--muted)}
-.finding{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:2.5rem;padding:2.5rem 0;border-top:1px solid var(--line);align-items:start}
-.finding:first-of-type{border-top:0}
-.tag{font:500 .75rem/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--river)}
-.tag.warn{color:var(--bad)}
-.evidence{min-width:0}
-figure{margin:0;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:.8rem}
-figure img{display:block;width:100%;max-width:100%;height:auto;border-radius:6px;background:#fff}
-figcaption{font-size:.85rem;color:var(--muted);margin-top:.55rem;line-height:1.45}
-.tablewrap{overflow-x:auto;background:var(--panel);border:1px solid var(--line);border-radius:12px}
-table{border-collapse:collapse;width:100%;font-size:.9rem;font-variant-numeric:tabular-nums}
-th,td{padding:.6rem .8rem;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
-th:first-child,td:first-child{text-align:left}th{color:var(--muted);font-weight:500;font-size:.82rem}
-tr:last-child td{border-bottom:0}td.best{color:var(--good);font-weight:600}td.neg{color:var(--bad)}
-.callout{background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--signal);border-radius:10px;padding:1rem 1.2rem;margin-top:1rem}
-.learned{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1rem;margin-top:1.5rem}
-.learned div{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:1.2rem}
-.learned b{display:block;font:700 1.05rem var(--display);margin-bottom:.4rem}.learned span{color:var(--muted);font-size:.95rem}
-.built{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1.5rem;margin-top:1.2rem;font-size:.95rem}
-.built b{font:500 .75rem var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:.4rem}
-code{font-family:var(--mono);font-size:.88em}
-footer{margin-top:4rem;padding:2rem 0 3rem;border-top:1px solid var(--line);font-size:.88rem;color:var(--muted)}
-@media (max-width:860px){.hero .wrap,.idea,.finding{grid-template-columns:minmax(0,1fr)}.hero .wrap{gap:2rem;padding-top:3rem;padding-bottom:3rem}
-.strip .wrap{grid-template-columns:repeat(2,minmax(0,1fr))}.stat:nth-child(2){border-right:0}.stat:nth-child(-n+2){border-bottom:1px solid var(--line)}
-.steps,.learned,.built{grid-template-columns:minmax(0,1fr)}.ticks{display:none}section{padding-top:3rem}}
+:root{--ink:#1a1a1a;--muted:#5f5f5f;--rule:#d9d9d9;--faint:#f4f4f2;--accent:#1d4e89;
+--serif:"Source Serif 4",Georgia,serif;--sans:"Source Sans 3",system-ui,sans-serif;color-scheme:light}
+*{box-sizing:border-box}html{-webkit-text-size-adjust:100%}
+body{margin:0;background:#fff;color:var(--ink);font:18px/1.65 var(--serif)}
+.page{max-width:44rem;margin:0 auto;padding:3.5rem 20px 4rem}
+a{color:var(--accent);text-underline-offset:2px}
+.byline{font:500 .85rem/1.4 var(--sans);color:var(--muted);letter-spacing:.02em}
+h1{font:700 clamp(1.7rem,4vw,2.25rem)/1.2 var(--serif);margin:.6rem 0 .8rem;letter-spacing:-.01em;text-wrap:balance}
+.meta{font:.9rem/1.5 var(--sans);color:var(--muted);margin:0 0 2rem}
+.abstract{border-top:1px solid var(--ink);border-bottom:1px solid var(--rule);padding:1.1rem 0 .4rem;margin-bottom:2rem}
+.label{font:600 .78rem/1 var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 0 .6rem}
+.numbers{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1.2rem;margin:0 0 2.5rem;font-family:var(--sans)}
+.numbers b{display:block;font:600 1.45rem/1.15 var(--sans);font-variant-numeric:tabular-nums}
+.numbers span{display:block;font-size:.84rem;line-height:1.35;color:var(--muted);margin-top:.25rem}
+h2{font:700 1.35rem/1.3 var(--serif);margin:2.8rem 0 .7rem}
+h2 .n{color:var(--muted);font-weight:400;margin-right:.4rem}
+p{margin:0 0 1rem}
+.eq{font:italic 1.15rem/1.6 var(--serif);text-align:center;margin:1.4rem 0;padding:.9rem 0;border-top:1px solid var(--rule);border-bottom:1px solid var(--rule)}
+.eq small{display:block;font:normal .85rem var(--sans);color:var(--muted);margin-top:.2rem}
+.aside{font:.92rem/1.55 var(--sans);color:var(--muted);background:var(--faint);padding:.8rem 1rem;margin:1rem 0 1.2rem}
+figure{margin:1.6rem 0 1.8rem}
+figure img{display:block;width:100%;height:auto}
+figcaption{font:.88rem/1.5 var(--sans);color:var(--muted);margin-top:.5rem}
+figcaption b{color:var(--ink);font-weight:600}
+.tablewrap{overflow-x:auto;margin:1.2rem 0 1.6rem}
+table{border-collapse:collapse;width:100%;font:.9rem/1.4 var(--sans);font-variant-numeric:tabular-nums}
+caption{text-align:left;font:.88rem/1.5 var(--sans);color:var(--muted);caption-side:bottom;padding-top:.5rem}
+caption b{color:var(--ink);font-weight:600}
+thead th{border-top:1.5px solid var(--ink);border-bottom:1px solid var(--ink);font-weight:600;padding:.45rem .6rem;text-align:right}
+td{padding:.4rem .6rem;text-align:right;border-bottom:1px solid #eee;white-space:nowrap}
+tbody tr:last-child td{border-bottom:1.5px solid var(--ink)}
+th:first-child,td:first-child{text-align:left}
+td.best{font-weight:700}
+ul.methods{padding-left:1.1rem;margin:0}ul.methods li{margin:.35rem 0}
+footer{margin-top:3rem;padding-top:1rem;border-top:1px solid var(--rule);font:.85rem/1.5 var(--sans);color:var(--muted)}
+code{font-size:.85em}
+@media (max-width:640px){body{font-size:17px}.page{padding-top:2.2rem}.numbers{grid-template-columns:repeat(2,minmax(0,1fr))}}
 """
 
 
 def build(root: Path) -> Path:
+    from . import figures
     run = latest_run(root / "output")
     s = stats(run)
     docs = root / "docs"
     img = docs / "img"
     img.mkdir(parents=True, exist_ok=True)
-    charts = {}
-    for name in ("monthly_gap", "flow_balance", "storm_forecast", "skill_by_horizon"):
-        src = run / f"{name}.png"
-        if src.exists():
-            shutil.copy(src, img / src.name)
-            charts[name] = f"img/{src.name}"
 
     e = html.escape
-    names = {"upper_hudson": "Upper Hudson", "mohawk": "Mohawk at Cohoes", "green_island": "Green Island"}
+    names = {"upper_hudson": "Hudson River above Lock 1, near Waterford", "mohawk": "Mohawk River at Cohoes",
+             "green_island": "Hudson River at Green Island"}
+    short = {"upper_hudson": "Upper Hudson", "mohawk": "Mohawk", "green_island": "Green Island"}
     ids = {k: v["id"].replace("USGS-", "") for k, v in config.SITES.items()}
     q = s["median_flow"]
     inv = s.get("inv")
     per = inv["offset_periods"][0] if inv and inv["offset_periods"] else None
 
-    def fig(key, cap):
-        return (f'<figure><img src="{charts[key]}" alt="{e(cap)}" loading="lazy">'
-                f'<figcaption>{e(cap)}</figcaption></figure>') if key in charts else ""
+    figures.balance(run, per, img / "balance.png")
+    figures.monthly(run, per, img / "monthly.png")
+    figures.storm(run, img / "storm.png")
 
+    # forecasting table
     best12 = None
     frows = ""
     for f in s["forecasts"]:
@@ -211,181 +170,134 @@ def build(root: Path) -> Path:
         best = max(main, key=lambda m: main[m]["skill"])
         if f["h"] == 12:
             best12 = (best, main[best]["skill"])
-        cells = "".join(
-            f'<td class="{"best" if m == best else ("neg" if f[m]["skill"] < 0 else "")}">{f[m]["skill"]:+.0%}</td>'
-            for m in MODELS if m != "persistence")
+        cells = "".join(f'<td class="{"best" if m == best else ""}">{f[m]["skill"]:+.0%}</td>' for m in MODELS if m != "persistence")
         frows += f"<tr><td>{f['h']} hours</td>{cells}<td>{f['coverage']:.0%}</td></tr>"
     fhead = "".join(f"<th>{e(MODELS[m])}</th>" for m in MODELS if m != "persistence")
     best_skill = max((f[m]["skill"] for f in s["forecasts"] for m in MODELS if m != "persistence"), default=0)
 
-    grows = "".join(
-        f"<tr><td>{e(names.get(g['site'], g['site']))}</td><td>{g['n']:,}</td><td>{pct(100 * g['flagged'])}</td>"
-        f"<td>{g['estimated']:,}</td><td>{g['stuck']:,}</td><td>{g['spikes']:,}</td></tr>"
-        for g in s["gauges"])
+    gauge_rows = "".join(
+        f"<tr><td>{e(names[g['site']])}</td><td>{ids[g['site']]}</td><td>{q[g['site']]:,.0f}</td>"
+        f"<td>{g['n']:,}</td><td>{pct(100 * g['flagged'])}</td></tr>"
+        for g in sorted(s["gauges"], key=lambda g: list(config.SITES).index(g["site"])))
 
-    # --- the story -------------------------------------------------------------
+    flagged_pct = pct(100 * s["flagged"] / s["readings"])
     if per:
         p_start, p_end = date.fromisoformat(per["start"]), date.fromisoformat(per["end"])
-        answer = (f"On a typical day the gauges agree to within {pct(abs(s['daily_median']), d=0)}. The exception is "
-                  f"{p_start:%B %Y} to {p_end:%B %Y}, when they disagreed by about "
-                  f"{round(per['median_gap_cfs'], -2):,.0f} cubic feet per second, which points to a calibration "
-                  f"error at one gauge.")
-        stat3 = (f"{per['months']} months", "when one gauge appears to have drifted out of calibration")
+        gap_big = f"{round(per['median_gap_cfs'], -2):,.0f}"
+        summary_result = (f"On a typical day the three gauges agree to within {pct(abs(s['daily_median']), d=0)}. "
+                          f"The exception is {p_start:%B %Y} to {p_end:%B %Y}, when Green Island read about {gap_big} cfs "
+                          f"more than the two upstream gauges combined. A gap that switches on and off like this, "
+                          f"regardless of season or flow, points to a calibration error at one gauge.")
+        third = (f"{per['months']} months", "when the gauges disagreed by about " + gap_big + " cfs")
     else:
-        answer = f"On a typical day the gauges agree to within {pct(abs(s['daily_median']), d=0)}."
-        stat3 = (pct(s["daily_median"], True), "typical daily gap between inflow and outflow")
+        summary_result = f"On a typical day the three gauges agree to within {pct(abs(s['daily_median']), d=0)}."
+        third = (pct(s["daily_median"], True), "typical daily gap")
 
-    canal_block = ""
+    canal = ""
     if inv:
-        canal_block = f"""
-<div class="finding">
-  <div><div class="tag warn">Finding 2</div><h3>The canal does not explain the gap</h3>
-  <p>The gap looks seasonal, and the Erie Canal diverts part of the Mohawk around its gauge and returns it to the
-  Hudson above Green Island, so it is the obvious candidate. I tested it against the canal's real opening and
-  closing dates for 2022–2025.</p>
-  <p>The canal is not the cause. In cubic feet per second the gap is the same with the canal open
-  ({inv['gap_open_cfs']:,.0f}) as closed ({inv['gap_closed_cfs']:,.0f}), and it moved the expected way at only
-  {inv['events_consistent']} of {inv['events_total']} openings and closings. It only <i>looked</i> seasonal in
-  percent terms, because the river is low in late summer.</p></div>
-  <div class="evidence">{fig('monthly_gap', 'Median daily gap by month (cfs). Blue bands: canal open. Orange: months above 1,000 cfs.')}</div>
-</div>"""
-    step_block = ""
-    if per:
-        if inv["calibration"]:
-            rows = "".join(f"<tr><td>{e(names.get(r['site'], r['site']))}</td><td>{'During' if r['in_offset_period'] else 'Outside'}</td>"
-                           f"<td>{r['measurements']}</td><td>{r['median_error_pct']:+.1f}%</td></tr>" for r in inv["calibration"])
-            cal = ("<div class=\"tablewrap\"><table><thead><tr><th>Gauge</th><th>Offset period</th><th>Hand measurements</th>"
-                   f"<th>Gauge vs. hand measurement</th></tr></thead><tbody>{rows}</tbody></table></div>")
-        else:
-            cal = ("<div class=\"callout\"><b>Next test, in progress.</b> USGS crews measure each river by hand several times "
-                   "a year, and the gauges are calibrated against those visits. Comparing each gauge with the hand "
-                   "measurements during the offset year will show which one drifted.</div>")
-        step_block = f"""
-<div class="finding">
-  <div><div class="tag">Finding 3</div><h3>The real pattern is a year-long step</h3>
-  <p>From {p_start:%B %Y} to {p_end:%B %Y} the gap jumps to about {round(per['median_gap_cfs'], -2):,.0f} cfs, then drops
-  back almost overnight. Outside that year it is {s.get('gap_outside_cfs', 0):,.0f} cfs
-  ({pct(s.get('gap_outside_pct', 0), True)}).</p>
-  <p>Something physical in the river would follow the seasons or the flow. A gap that switches on, stays for a
-  year and switches off looks like a measuring problem: one gauge's calibration drifting, then being corrected.</p></div>
-  <div class="evidence">{cal}</div>
-</div>"""
+        canal = f"""
+<h2><span class=n>4</span>Is it the canal?</h2>
+<p>The gap looks seasonal, and the Erie Canal diverts part of the Mohawk around its gauge and returns it to the Hudson
+above Green Island, so it was the natural first candidate. I tested it against the canal's opening and closing dates
+for each year from 2022 to 2025.</p>
+<p>The canal does not explain the gap. Measured in cubic feet per second, the gap is about the same with the canal open
+({inv['gap_open_cfs']:,.0f} cfs) as closed ({inv['gap_closed_cfs']:,.0f} cfs), and it moved in the expected direction at only
+{inv['events_consistent']} of {inv['events_total']} openings and closings. It only appears seasonal in percentage terms,
+because the river is low in late summer ({inv['flow_open_cfs']:,.0f} cfs against {inv['flow_closed_cfs']:,.0f} cfs).</p>
+<figure><img src="img/monthly.png" alt="Median daily gap by month, with canal seasons shaded" loading="lazy">
+<figcaption><b>Figure 2.</b> Median daily gap by month. Shaded blue: canal open. Dark bars: the offset year.</figcaption></figure>"""
 
-    repo = f'<a class="btn ghost" href="{e(REPO_URL)}">Code on GitHub</a>' if REPO_URL else ""
-    best_sentence = (f"{MODELS[best12[0]]} cut 12-hour forecast error by {best12[1]:.0%}." if best12 else "")
+    step = ""
+    if per:
+        step = f"""
+<h2><span class=n>5</span>A year-long offset</h2>
+<p>From {p_start:%B %Y} to {p_end:%B %Y} the gap rises to about {gap_big} cfs, then falls back almost at once. Outside that
+period it is {s.get('gap_outside_cfs', 0):,.0f} cfs ({pct(s.get('gap_outside_pct', 0), True)}).</p>
+<p>A physical cause, such as an unmeasured tributary or a diversion, would follow the seasons or the flow. A gap that
+switches on, holds for a year and switches off is the signature of a measurement problem: one gauge's calibration
+drifting and later being corrected. The next step is to compare each gauge with the hand measurements USGS field crews
+take several times a year, which will show which gauge drifted.</p>"""
+
+    best_sentence = (f"The best model, {MODELS[best12[0]].lower()}, reduced 12-hour forecast error by {best12[1]:.0%}." if best12 else "")
+    repo = f'<a href="{e(REPO_URL)}">Code on GitHub</a>' if REPO_URL else ""
 
     page = f"""<!doctype html><html lang="en"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Hudson River Gauge Check</title>
-<meta name="description" content="A mass-balance check of three USGS streamflow gauges on the Hudson and Mohawk rivers, 2022–2025, with machine-learning flow forecasts.">
+<meta name="description" content="A mass-balance check of three USGS streamflow gauges at the Hudson–Mohawk confluence, 2022–2025, with flow forecasts.">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="{FONTS}" rel="stylesheet"><style>{CSS}</style></head><body>
+<main class="page">
 
-<header class="hero"><div class="ticks" aria-hidden="true"></div><div class="wrap">
-  <div>
-    <div class="eyebrow">Data validation · Hudson River, New York</div>
-    <h1>Mass-Balance Validation of Streamflow Gauges at the Hudson–Mohawk Confluence</h1>
-    <p class="lede">The U.S. Geological Survey measures river flow at gauges across the country. Its data are used
-    for flood forecasting, water management and research. This project checks three neighbouring gauges against
-    each other over four years. The test is a basic principle of chemical engineering: <b>water is conserved</b>,
-    so the flow in must equal the flow out.</p>
-    <div class="answer"><b>Main result</b><span>{e(answer)}</span></div>
-    <div class="btns"><a class="btn primary" href="#findings">See the findings</a>{repo}</div>
-  </div>
-  <div><svg class="confluence" viewBox="0 0 520 330" role="img" aria-label="The upper Hudson and Mohawk rivers join and flow past the Green Island gauge">
-    <path class="r" d="M70 60 C 210 60, 230 165, 330 165" stroke-width="{3 + 9 * q['upper_hudson'] / max(q.values()):.1f}"/>
-    <path class="r" d="M70 270 C 210 270, 230 165, 330 165" stroke-width="{3 + 9 * q['mohawk'] / max(q.values()):.1f}"/>
-    <path class="r" d="M330 165 L 440 165" stroke-width="{3 + 9 * q['green_island'] / max(q.values()):.1f}"/>
-    <circle class="g" cx="70" cy="60" r="8"/><circle class="g" cx="70" cy="270" r="8"/><circle class="g" cx="450" cy="165" r="8"/>
-    <text class="n" x="70" y="35" text-anchor="start">Upper Hudson</text><text class="q" x="70" y="96">{q['upper_hudson']:,.0f} cfs</text>
-    <text class="n" x="70" y="305">Mohawk</text><text class="q" x="70" y="246">{q['mohawk']:,.0f} cfs</text>
-    <text class="n" x="450" y="138" text-anchor="end">Green Island</text><text class="q" x="450" y="200" text-anchor="end">{q['green_island']:,.0f} cfs</text>
-    <text class="eq" x="260" y="322" text-anchor="middle">median flow 2022–2025 · line width to scale</text>
-  </svg>
-  <p class="unit"><b>cfs</b> = cubic feet per second, the volume of water flowing past a gauge each second.
-  One cubic foot is about 28 litres, so Green Island's typical {q['green_island']:,.0f} cfs is roughly {round(q['green_island'] * 28.3168, -4):,.0f} litres every second.</p></div>
-</div></header>
+<div class="byline">Data science project · Hugh</div>
+<h1>Mass-Balance Validation of Streamflow Gauges at the Hudson–Mohawk Confluence</h1>
+<p class="meta">U.S. Geological Survey data, {s['start'][:4]}–{s['end'][:4]} · Python {('· ' + repo) if repo else ''}</p>
 
-<div class="strip"><div class="wrap">
-  <div class="stat"><b>{s['readings']:,}</b><span>sensor readings checked, every 15 minutes for four years</span></div>
-  <div class="stat"><b>{pct(100 * s['flagged'] / s['readings'])}</b><span>flagged as unreliable: stuck, spiking, iced or estimated</span></div>
-  <div class="stat"><b>{e(stat3[0])}</b><span>{e(stat3[1])}</span></div>
-  <div class="stat"><b>{best_skill:.0%}</b><span>less forecast error than assuming the river stays the same</span></div>
-</div></div>
+<div class="abstract"><p class="label">Summary</p>
+<p>The U.S. Geological Survey measures river flow at gauges across the country, and its data are used for flood
+forecasting, water management and research. This project checks three neighbouring gauges against each other using a
+basic principle of chemical engineering: water is conserved, so the flow into a stretch of river must equal the flow
+out. {e(summary_result)}</p></div>
 
-<main class="wrap">
-<section id="idea">
-  <div class="idea">
-    <div class="narrow"><div class="tag">The idea</div><h2>Three gauges, one rule</h2>
-    <p>Near Troy, New York, the Mohawk River joins the Hudson. The U.S. Geological Survey measures the flow on each
-    river and again just downstream at Green Island, where they have combined.</p>
-    <p>So the water passing Green Island should equal what came down the two rivers an hour or two earlier. When it
-    doesn't, either a gauge is wrong or water is getting in or out somewhere nobody measures. Finding out which is
-    the whole project.</p></div>
-    <div class="equation"><span class="big">Green Island ≈ Upper Hudson + Mohawk</span>
-    measured at Green Island now<br>≈ <em>upper Hudson</em>, about 1 hour earlier<br>+ <em>Mohawk</em>, about 1 hour earlier<br>
-    <span class="muted">USGS gauges {ids['upper_hudson']}, {ids['mohawk']} and {ids['green_island']}</span></div>
-  </div>
-  <ol class="steps">
-    <li><b>Clean</b><span>Flag stuck sensors, fake spikes, ice and estimated values in every reading.</span></li>
-    <li><b>Balance</b><span>Check the water adds up between the gauges, hour by hour.</span></li>
-    <li><b>Investigate</b><span>Test explanations for where it doesn't, against outside evidence.</span></li>
-    <li><b>Forecast</b><span>Predict Green Island 6–24 hours ahead from upstream flows and rain.</span></li>
-  </ol>
-</section>
-
-<section id="findings">
-  <h2>What I found</h2>
-<div class="finding">
-  <div><div class="tag">Finding 1</div><h3>Most of the time, the gauges agree</h3>
-  <p>On a typical day the water adds up to within {pct(abs(s['daily_median']))} (median gap {pct(s['daily_median'], True)}).
-  Hour to hour it is noisier ({pct(s['hourly_abs'])}), because the dams and locks between the gauges hold water back
-  and release it in pulses. That noise is real river behaviour, not bad data.</p></div>
-  <div class="evidence">{fig('flow_balance', 'Top: Green Island against the two upstream gauges added together. Bottom: the gap, hour by hour.')}</div>
+<div class="numbers">
+<div><b>{s['readings']:,}</b><span>15-minute readings checked</span></div>
+<div><b>{flagged_pct}</b><span>flagged as unreliable</span></div>
+<div><b>{e(third[0])}</b><span>{e(third[1])}</span></div>
+<div><b>{best_skill:.0%}</b><span>lower forecast error than assuming no change</span></div>
 </div>
-{canal_block}
-{step_block}
-<div class="finding">
-  <div><div class="tag">Finding 4</div><h3>{pct(100 * s['flagged'] / s['readings'])} of readings needed a quality flag</h3>
-  <p>Most flags are routine: periods USGS marks as estimated, often because of ice, plus stuck or spiking sensors. For most of 2024 Green Island
-  only published estimated values every two hours, and the Mohawk's salt and temperature sensors were stuck or
-  spiking for long stretches.</p></div>
-  <div class="evidence"><div class="tablewrap"><table><thead><tr><th>Flow gauge</th><th>Readings</th><th>Flagged</th><th>Estimated</th><th>Stuck</th><th>Spikes</th></tr></thead>
-  <tbody>{grows}</tbody></table></div></div>
-</div>
-<div class="finding">
-  <div><div class="tag">Finding 5</div><h3>Forecasting works, modestly, and honestly</h3>
-  <p>Five models predict Green Island's flow ahead of time. Each is trained only on the past and scored on the
-  future, as it would be used. Skill is the share of error removed compared with assuming the flow stays the same.</p>
-  <p>{best_sentence} The pure mass-balance forecast lost to "no change",
-  because of the calibration offset it can't see. Its 90% prediction ranges were calibrated so that about 90% of
-  real outcomes land inside.</p></div>
-  <div class="evidence"><div class="tablewrap"><table><thead><tr><th>Ahead</th>{fhead}<th>Inside 90% range</th></tr></thead><tbody>{frows}</tbody></table></div>
-  <p class="muted" style="font-size:.85rem;margin-top:.5rem">Best model per horizon in green. Negative means worse than "no change".</p>
-  {fig('storm_forecast', 'The largest storm in the test period: 12-hour-ahead forecasts against what was measured, with the 90% range.')}</div>
-</div>
-</section>
 
-<section id="learned">
-  <h2>What I learned</h2>
-  <div class="learned">
-    <div><b>Physics beats rules</b><span>A sensor drifting out of calibration still reports believable numbers. Only checking it against its neighbours exposes it.</span></div>
-    <div><b>Units matter</b><span>In percent, the gap looked seasonal. In cubic feet per second it clearly wasn't, which ruled out the canal and pointed to the real cause.</span></div>
-    <div><b>Report what lost</b><span>The simple physics forecast lost to "no change". Saying so is more useful than hiding it.</span></div>
-  </div>
-</section>
+<h2><span class=n>1</span>The question</h2>
+<p>Near Troy, New York, the Mohawk River joins the Hudson. USGS measures the flow on each river just above the junction,
+and again at Green Island, just below it. Because water is conserved, the flow at Green Island should equal the two
+upstream flows added together, allowing about an hour for the water to travel between gauges.</p>
+<div class="eq">Green Island(t) ≈ Upper Hudson(t − 1 h) + Mohawk(t − 1 h)<small>travel times fitted from the data</small></div>
+<p>When the two sides do not match, either a gauge is wrong or water is entering or leaving somewhere unmeasured. The
+project asks how often they match, and what explains the times they do not.</p>
+<p class="aside">Flow is measured in <b>cubic feet per second (cfs)</b>, the volume of water passing a gauge each second.
+One cubic foot is about 28 litres, so Green Island's typical {q['green_island']:,.0f} cfs is roughly
+{round(q['green_island'] * 28.3168, -4):,.0f} litres every second.</p>
 
-<section id="built">
-  <h2>How it's built</h2>
-  <div class="built">
-    <div><b>Data</b>USGS Water Data API (15-minute readings and field measurements), Open-Meteo rainfall.</div>
-    <div><b>Methods</b>Python, polars, scikit-learn. Walk-forward testing, leakage checks, conformal prediction intervals, Isolation Forest.</div>
-    <div><b>Checks</b>Automated tests plant known faults in simulated rivers and confirm every check catches them.</div>
-  </div>
-</section>
+<h2><span class=n>2</span>Data</h2>
+<p>Readings every 15 minutes from three USGS gauges, {s['start'][:4]} to {s['end'][:4]}, downloaded from the USGS Water Data
+API, with hourly rainfall for each river basin from the Open-Meteo archive. Every reading was checked for stuck sensors,
+spikes, ice and values USGS marks as estimated; {flagged_pct} were flagged and left out.</p>
+<div class="tablewrap"><table><thead><tr><th>Gauge</th><th>USGS site</th><th>Median flow (cfs)</th><th>Readings</th><th>Flagged</th></tr></thead>
+<tbody>{gauge_rows}</tbody>
+<caption><b>Table 1.</b> The three flow gauges. For much of 2024 Green Island published only estimated values every two hours.</caption></table></div>
 
-<footer>{'<a href="' + e(REPO_URL) + '">Code on GitHub</a> · ' if REPO_URL else ''}Data: U.S. Geological Survey; rainfall from Open-Meteo.
-Results from run <code>{e(s['run'])}</code>, generated {date.today():%B %-d, %Y}.</footer>
+<h2><span class=n>3</span>Does the water add up?</h2>
+<p>Most of the time, yes. On a typical day the flow at Green Island matches the upstream total to within
+{pct(abs(s['daily_median']))} (median gap {pct(s['daily_median'], True)}). Hour to hour the gap is larger
+({pct(s['hourly_abs'])} median), because the dams and locks between the gauges hold water back and release it in
+pulses. That variation is real river behaviour rather than measurement error.</p>
+<figure><img src="img/balance.png" alt="Daily flow at Green Island against the upstream total, and the daily gap" loading="lazy">
+<figcaption><b>Figure 1.</b> Top: daily flow at Green Island and the two upstream gauges combined. Bottom: the daily gap.
+Breaks are periods with too few reliable readings. Shaded: {f"{p_start:%B %Y} to {p_end:%B %Y}" if per else "–"}.</figcaption></figure>
+{canal}
+{step}
+
+<h2><span class=n>{6 if per else 5}</span>Forecasting</h2>
+<p>Five models predict the flow at Green Island 6 to 24 hours ahead from upstream flows and rainfall. Each was trained
+only on earlier data and tested on later data, as it would be used in practice. Skill is the share of error removed
+compared with assuming the flow stays the same. {best_sentence} The prediction ranges were calibrated so that about 90%
+of actual flows fall inside them.</p>
+<div class="tablewrap"><table><thead><tr><th>Forecast</th>{fhead}<th>Inside 90% range</th></tr></thead><tbody>{frows}</tbody>
+<caption><b>Table 2.</b> Forecast skill against assuming no change (higher is better; negative is worse than no change). Best model per row in bold.</caption></table></div>
+<figure><img src="img/storm.png" alt="Measured flow during the largest storm, with 12-hour-ahead forecasts" loading="lazy">
+<figcaption><b>Figure 3.</b> The largest storm in the test period: measured flow, the forecast made 12 hours earlier, and its 90% range.</figcaption></figure>
+
+<h2><span class=n>{7 if per else 6}</span>Methods</h2>
+<ul class="methods">
+<li><b>Mass balance</b> with travel times between gauges fitted jointly from the data.</li>
+<li><b>Quality control</b> using USGS qualifier codes plus checks for stuck and spiking sensors.</li>
+<li><b>Forecasting</b> with ridge regression and gradient-boosted trees, walk-forward testing, and conformal prediction intervals.</li>
+<li><b>Anomaly detection</b> with an Isolation Forest on balance and sensor signals.</li>
+<li><b>Tests</b> that plant known faults in simulated rivers and confirm each check catches them.</li>
+<li>Python, polars, scikit-learn, matplotlib.</li>
+</ul>
+
+<footer>Data: U.S. Geological Survey (gauges {ids['upper_hudson']}, {ids['mohawk']}, {ids['green_island']}); rainfall from Open-Meteo.
+{(repo + ' · ') if repo else ''}Results from run <code>{e(s['run'])}</code>, generated {date.today():%B %-d, %Y}.</footer>
 </main></body></html>"""
     (docs / "index.html").write_text(page, encoding="utf-8")
     return docs / "index.html"
@@ -395,4 +307,3 @@ if __name__ == "__main__":
     path = build(Path.cwd())
     print(f"✅ Website built: {path}")
     print("   Preview: double-click docs/index.html in Finder.")
-    print("   Publish: push to GitHub, then Settings > Pages > Branch: main, folder /docs.")
