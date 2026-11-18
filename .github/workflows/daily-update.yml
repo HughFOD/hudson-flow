@@ -1,0 +1,76 @@
+name: Daily data update
+
+# Every day at noon New York time, starting Thursday, November 19, 2026.
+# GitHub schedules run in UTC, so there is one entry for winter (17:00 UTC = noon EST)
+# and one for summer (16:00 UTC = noon EDT); the job skips whichever is not noon in New York.
+on:
+  schedule:
+    - cron: "0 16 * * *"
+    - cron: "0 17 * * *"
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: "Publish the result to the website"
+        type: boolean
+        default: true
+  push:
+    branches: [main]
+    paths: [".github/workflows/daily-update.yml", "daily_update.py"]   # test run, never publishes
+
+permissions:
+  contents: write
+
+concurrency:
+  group: daily-update
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Check the start date and the New York time
+        id: gate
+        run: |
+          today=$(TZ=America/New_York date +%F); hour=$(TZ=America/New_York date +%H)
+          go=true
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            if [[ "$today" < "2026-11-19" || "$hour" != "12" ]]; then go=false; fi
+          fi
+          echo "New York: $today $hour:00 -> run=$go"
+          echo "run=$go" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@v4
+        if: steps.gate.outputs.run == 'true'
+
+      - uses: actions/setup-python@v5
+        if: steps.gate.outputs.run == 'true'
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install
+        if: steps.gate.outputs.run == 'true'
+        run: pip install -r requirements.txt
+
+      - name: Restore downloaded data
+        if: steps.gate.outputs.run == 'true'
+        uses: actions/cache@v4
+        with:
+          path: data/raw
+          key: usgs-raw-${{ github.run_id }}
+          restore-keys: usgs-raw-
+
+      - name: Download, analyse, rebuild the page
+        if: steps.gate.outputs.run == 'true'
+        run: python daily_update.py
+
+      - name: Publish
+        if: steps.gate.outputs.run == 'true' && (github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.publish))
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs
+          if git diff --cached --quiet; then echo "No changes"; exit 0; fi
+          git commit -m "Daily data update $(TZ=America/New_York date +%F)"
+          git push

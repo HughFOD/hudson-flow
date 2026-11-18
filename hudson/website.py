@@ -194,6 +194,9 @@ def build(root: Path) -> Path:
             charts[name] = f"img/{src.name}"
 
     e = html.escape
+    yrs = f"{s['start'][:4]}–{s['end'][:4]}"
+    n_days = (date.fromisoformat(s["end"]) - date.fromisoformat(s["start"])).days
+    n_years = {3: "three", 4: "four", 5: "five", 6: "six", 7: "seven"}.get(round(n_days / 365.25), f"{n_days / 365.25:.0f}")
     names = {"upper_hudson": "Upper Hudson", "mohawk": "Mohawk at Cohoes", "green_island": "Green Island"}
     ids = {k: v["id"].replace("USGS-", "") for k, v in config.SITES.items()}
     q = s["median_flow"]
@@ -242,7 +245,7 @@ def build(root: Path) -> Path:
   <div><div class="tag warn">Finding 2</div><h3>The canal does not explain the gap</h3>
   <p>The gap looks seasonal, and the Erie Canal diverts part of the Mohawk around its gauge and returns it to the
   Hudson above Green Island, so it is the obvious candidate. I tested it against the canal's real opening and
-  closing dates for 2022–2025.</p>
+  closing dates for {yrs}.</p>
   <p>The canal is not the cause. In cubic feet per second the gap is the same with the canal open
   ({inv['gap_open_cfs']:,.0f}) as closed ({inv['gap_closed_cfs']:,.0f}), and it moved the expected way at only
   {inv['events_consistent']} of {inv['events_total']} openings and closings. It only <i>looked</i> seasonal in
@@ -277,7 +280,7 @@ def build(root: Path) -> Path:
     page = f"""<!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Hudson River Gauge Check</title>
-<meta name="description" content="A mass-balance check of three USGS streamflow gauges on the Hudson and Mohawk rivers, 2022–2025, with machine-learning flow forecasts.">
+<meta name="description" content="A mass-balance check of three USGS streamflow gauges on the Hudson and Mohawk rivers, {yrs}, with machine-learning flow forecasts.">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="{FONTS}" rel="stylesheet"><style>{CSS}</style></head><body>
 
@@ -287,7 +290,7 @@ def build(root: Path) -> Path:
     <h1>Mass-Balance Validation of Streamflow Gauges at the Hudson–Mohawk Confluence</h1>
     <p class="lede">The U.S. Geological Survey measures river flow at gauges across the country. Its data are used
     for flood forecasting, water management and research. This project checks three neighbouring gauges against
-    each other over four years. The test is a basic principle of chemical engineering: <b>water is conserved</b>,
+    each other over {n_years} years. The test is a basic principle of chemical engineering: <b>water is conserved</b>,
     so the flow in must equal the flow out.</p>
     <div class="answer"><b>Main result</b><span>{e(answer)}</span></div>
     <div class="btns"><a class="btn primary" href="#findings">See the findings</a>{repo}</div>
@@ -300,14 +303,14 @@ def build(root: Path) -> Path:
     <text class="n" x="70" y="35" text-anchor="start">Upper Hudson</text><text class="q" x="70" y="96">{q['upper_hudson']:,.0f} cfs</text>
     <text class="n" x="70" y="305">Mohawk</text><text class="q" x="70" y="246">{q['mohawk']:,.0f} cfs</text>
     <text class="n" x="450" y="138" text-anchor="end">Green Island</text><text class="q" x="450" y="200" text-anchor="end">{q['green_island']:,.0f} cfs</text>
-    <text class="eq" x="260" y="322" text-anchor="middle">median flow 2022–2025 · line width to scale</text>
+    <text class="eq" x="260" y="322" text-anchor="middle">median flow {yrs} · line width to scale</text>
   </svg>
   <p class="unit"><b>cfs</b> = cubic feet per second, the volume of water flowing past a gauge each second.
   One cubic foot is about 28 litres, so Green Island's typical {q['green_island']:,.0f} cfs is roughly {round(q['green_island'] * 28.3168, -4):,.0f} litres every second.</p></div>
 </div></header>
 
 <div class="strip"><div class="wrap">
-  <div class="stat"><b>{s['readings']:,}</b><span>sensor readings checked, every 15 minutes for four years</span></div>
+  <div class="stat"><b>{s['readings']:,}</b><span>sensor readings checked, every 15 minutes for {n_years} years</span></div>
   <div class="stat"><b>{pct(100 * s['flagged'] / s['readings'])}</b><span>flagged as unreliable: stuck, spiking, iced or estimated</span></div>
   <div class="stat"><b>{e(stat3[0])}</b><span>{e(stat3[1])}</span></div>
   <div class="stat"><b>{best_skill:.0%}</b><span>less forecast error than assuming the river stays the same</span></div>
