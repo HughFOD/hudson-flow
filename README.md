@@ -1,6 +1,10 @@
 # Hudson River Mass Balance: Validating and Forecasting River Data with Physics + ML
 
-**Project website: https://hughfod.github.io/hudson-flow/**
+**Website: https://hughod.com/hudson-flow/**
+
+**Result:** on the real river (2022–2025), the checks found a year-long offset at one gauge (December 2022 to November 2023), and boosted trees forecast Green Island flow 12 hours ahead with 20% less error than "no change".
+
+![Largest storm in the test period, forecast 12 hours ahead](docs/img/storm_forecast.png)
 
 Can I trust a river gauge, and can I predict it? Above Troy, the upper Hudson
 and the Mohawk join and flow past a third gauge at Green Island. Water and
